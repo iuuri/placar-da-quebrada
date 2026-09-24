@@ -50,7 +50,6 @@ Trigger `on_auth_user_created` em `auth.users` cria o profile.
 | pontos_vitoria / pontos_empate / pontos_derrota | smallint | 3 / 1 / 0 |
 | qtd_periodos | smallint | 2 |
 | minutos_periodo | smallint | 25 |
-| amarelos_suspensao | smallint | 3 |
 | criterios_desempate | text[] | ordem de [business-rules.md](business-rules.md) |
 | created_by | uuid → profiles | |
 
@@ -106,7 +105,7 @@ Trigger `on_auth_user_created` em `auth.users` cria o profile.
 - `v_classificacao` — por campeonato/time: pontos, jogos, V, E, D, GP, GC, SG, aproveitamento. Considera só `encerrada`/`wo`, pontos das regras do campeonato. Ordenação por critérios de desempate feita em SQL (critérios simples) + confronto direto no frontend (lib testada com Vitest).
 - `v_artilharia` — gols por jogador (exclui `gol_contra` e anulados).
 - `v_cartoes` — amarelos/vermelhos por jogador.
-- `v_suspensos` — jogadores suspensos para a próxima partida do time.
+- `v_suspensos` — jogadores suspensos para a próxima partida do time (no MVP: só vermelho direto e suspensão manual do admin).
 
 Views criadas com `security_invoker = true` para respeitar o RLS das tabelas base.
 

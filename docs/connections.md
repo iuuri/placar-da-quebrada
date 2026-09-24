@@ -20,11 +20,10 @@ Claude Code ──git push──► GitHub ──Actions──► Cloudflare Pag
 
 ## Estado atual deste repositório (24/09/2026)
 
-- Remoto `origin` já configurado: `https://github.com/iuuri/placar-da-quebrada.git` (repositório existe e está vazio).
-- Branch `main` já criada; ainda sem nenhum commit.
-- `git config user.name` e `user.email` **não configurados**, então o primeiro commit vai falhar até você fazer o passo 1.
+- Projeto Supabase criado: ref `uoszdwwqzhilwbsilmkn` (`https://uoszdwwqzhilwbsilmkn.supabase.co`), cadastro público desligado. O ref não é segredo.
+- Repositório `https://github.com/iuuri/placar-da-quebrada`, com o primeiro commit (`d29de1f`) já na `main`. Identidade do git configurada (Iuri).
 - `gh` (GitHub CLI) não instalado. É opcional; sem ele o Claude cria PRs pelo site do GitHub.
-- `.env` local existe e está no `.gitignore` (deve conter só URL e anon key).
+- `.env` local existe, aponta para esse projeto e está no `.gitignore` (deve conter só URL e anon key).
 - O MCP do Supabase aparece no Claude Code, mas **ainda não foi autenticado**.
 
 ## 1. GitHub — permitir que o Claude faça commit e push

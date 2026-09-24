@@ -9,7 +9,6 @@ Cada fase termina **publicada** em `placar-da-quebrada.pages.dev`. Uma fase = um
 - [ ] Criar projeto Cloudflare Pages (Direct Upload) e API token
 - [ ] Cadastrar secrets/variables no GitHub ([hosting.md](hosting.md#4-segredos-no-github))
 - [ ] Autenticar o MCP do Supabase no Claude Code
-- [ ] Responder as regras ❓ em [business-rules.md](business-rules.md)
 
 ## Fase 1 — Esqueleto no ar
 - [ ] Scaffold Vite + React + TS + Tailwind + shadcn/ui + ESLint + Vitest + scripts npm
@@ -50,6 +49,7 @@ Cada fase termina **publicada** em `placar-da-quebrada.pages.dev`. Uma fase = um
 - [ ] Card de resultado para compartilhar no WhatsApp
 
 ## Fase 6 — Evolução
+- [ ] Definir e implementar as regras da seção "Fora das regras por enquanto" em [business-rules.md](business-rules.md)
 - [ ] Grupos + mata-mata + pênaltis
 - [ ] Segundo projeto Supabase para dev/preview
 - [ ] Domínio próprio

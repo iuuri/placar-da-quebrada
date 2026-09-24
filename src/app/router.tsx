@@ -1,7 +1,7 @@
 // Arquivo de configuração de rotas, não de componentes: o aviso de fast refresh não se aplica.
 // oxlint-disable react/only-export-components
 import { lazy, Suspense, type ComponentType } from 'react'
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, Outlet } from 'react-router'
 import { RequireRole } from '@/features/auth/RequireRole'
 import { HomePage } from '@/features/home/pages/HomePage'
 import { PublicLayout } from './layouts/PublicLayout'
@@ -45,9 +45,23 @@ export const router = createBrowserRouter([
         path: 'admin',
         element: (
           <RequireRole roles={['admin']}>
-            {sobDemanda(() => import('@/features/painel/pages/AdminPage'), 'AdminPage')}
+            <Outlet />
           </RequireRole>
         ),
+        children: [
+          {
+            index: true,
+            element: sobDemanda(() => import('@/features/campeonatos/pages/CampeonatosAdminPage'), 'CampeonatosAdminPage'),
+          },
+          {
+            path: 'campeonatos/novo',
+            element: sobDemanda(() => import('@/features/campeonatos/pages/CampeonatoFormPage'), 'CampeonatoFormPage'),
+          },
+          {
+            path: 'campeonatos/:id',
+            element: sobDemanda(() => import('@/features/campeonatos/pages/CampeonatoFormPage'), 'CampeonatoFormPage'),
+          },
+        ],
       },
     ],
   },

@@ -36,7 +36,8 @@
 | `/login` | público | Login |
 | `/painel` | operador/admin | Meus jogos (hoje / próximos) |
 | `/painel/jogo/:id` | operador/admin | **Modo placar** (controle ao vivo) |
-| `/admin/campeonatos[/:id]` | admin | CRUD campeonato, regras, gerar tabela |
+| `/admin` | admin | Lista de campeonatos |
+| `/admin/campeonatos/novo`, `/admin/campeonatos/:id` | admin | Criar/editar/apagar campeonato e regras |
 | `/admin/campeonatos/:id/times` | admin | Times e jogadores |
 | `/admin/campeonatos/:id/partidas` | admin | Agenda e operadores |
 | `/admin/usuarios` | admin | Operadores |

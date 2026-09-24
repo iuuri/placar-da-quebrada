@@ -9,14 +9,13 @@ auth.users 1─1 profiles
 campeonatos 1─N times 1─N jogadores
 campeonatos 1─N partidas N─1 times (mandante / visitante)
 partidas 1─N eventos_partida N─1 jogadores
-campeonatos N─N profiles  (via campeonato_operadores)
 ```
 
 ## Enums
 
 ```sql
 create type papel_usuario   as enum ('admin', 'operador');
-create type status_camp     as enum ('rascunho', 'inscricoes', 'em_andamento', 'finalizado');
+create type status_campeonato as enum ('rascunho', 'inscricoes', 'em_andamento', 'finalizado');
 create type modalidade      as enum ('campo', 'society', 'futsal');
 create type status_partida  as enum ('agendada', 'em_andamento', 'intervalo', 'encerrada', 'adiada', 'cancelada', 'wo');
 create type tipo_evento     as enum ('gol', 'gol_contra', 'amarelo', 'segundo_amarelo', 'vermelho',
@@ -45,7 +44,7 @@ Trigger `on_auth_user_created` em `auth.users` cria o profile.
 | temporada | text | ex. "2026" |
 | modalidade | modalidade | |
 | local_padrao | text | |
-| status | status_camp | |
+| status | status_campeonato | |
 | publico | boolean | default false — visitante só vê se true |
 | pontos_vitoria / pontos_empate / pontos_derrota | smallint | 3 / 1 / 0 |
 | qtd_periodos | smallint | 2 |
@@ -53,11 +52,10 @@ Trigger `on_auth_user_created` em `auth.users` cria o profile.
 | criterios_desempate | text[] | ordem de [business-rules.md](business-rules.md) |
 | created_by | uuid → profiles | |
 
-### campeonato_operadores
-`(campeonato_id, user_id)` PK composta.
-
 ### times
-`id, campeonato_id, nome, sigla char(3), cor_primaria text, escudo_url text, responsavel text, contato text` — unique `(campeonato_id, nome)`.
+`id, campeonato_id, nome, sigla (2–4 letras maiúsculas/números), cor_primaria (#rrggbb), escudo_url (https), responsavel, contato` — unique `(campeonato_id, nome)` e `(campeonato_id, sigla)`.
+
+`responsavel` e `contato` são dados pessoais: o papel `anon` tem `grant select` só nas colunas públicas. **Na área pública, sempre liste as colunas** (`select('id, nome, sigla, cor_primaria, escudo_url')`); `select('*')` como visitante dá `permission denied`.
 
 ### jogadores
 `id, time_id, nome, apelido, numero smallint, posicao text, foto_url, ativo bool` — unique parcial `(time_id, numero) where ativo`.
@@ -114,7 +112,8 @@ Views criadas com `security_invoker = true` para respeitar o RLS das tabelas bas
 | função | quem | faz |
 |---|---|---|
 | `private.is_admin()` | interna (schema `private`, fora da API) | bool |
-| `private.pode_operar(partida_id)` | interna | bool |
+| `private.is_staff()` | interna | bool: perfil ativo (admin ou operador) |
+| `private.pode_operar(partida_id)` | interna | bool: `is_staff()` e partida não encerrada (admin pode sempre) |
 | `server_time()` | todos | `now()` para sincronizar relógio |
 | `partida_iniciar_periodo(id)` | operador/admin | status em_andamento, play |
 | `partida_pausar(id)` / `partida_retomar(id)` | operador/admin | pausa/retoma cronômetro |
@@ -136,7 +135,7 @@ create policy "X_select_publico" on public.X for select
 
 -- leitura total para usuários logados ativos
 create policy "X_select_logado" on public.X for select
-  to authenticated using ( (select private.is_admin()) or /* vinculado */ ... );
+  to authenticated using ( (select private.is_staff()) or /* campeonato público */ ... );
 
 -- escrita admin
 create policy "X_admin_all" on public.X for all

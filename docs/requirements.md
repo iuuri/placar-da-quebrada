@@ -10,7 +10,6 @@
 ### RF02 — Usuários (admin)
 - Admin cria operador (nome, e-mail, senha provisória ou convite por e-mail).
 - Admin ativa/desativa operador e troca o perfil (operador ↔ admin).
-- Admin vincula operadores a campeonatos.
 
 ### RF03 — Campeonatos (admin)
 - CRUD de campeonato: nome, temporada/ano, modalidade (campo, society, futsal), local padrão, status, público/privado.
@@ -24,7 +23,7 @@
 
 ### RF06 — Partidas (admin)
 - Criar partidas manualmente ou gerar tabela de pontos corridos automaticamente (turno ou turno e returno).
-- Campos: rodada, mandante, visitante, data/hora, local, operador responsável.
+- Campos: rodada, mandante, visitante, data/hora, local.
 - Status: `agendada`, `em_andamento`, `intervalo`, `encerrada`, `adiada`, `cancelada`, `wo`.
 
 ### RF07 — Modo placar ao vivo (operador/admin)

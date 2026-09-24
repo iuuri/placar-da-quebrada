@@ -20,7 +20,11 @@ Cada fase termina **publicada** em `placar-da-quebrada.pages.dev`. Uma fase = um
 - **Entrega:** site no ar, admin consegue logar.
 
 ## Fase 2 — Cadastros (admin)
-- [ ] Migration 2: `campeonatos`, `campeonato_operadores`, `times`, `jogadores` + RLS
+- [x] 2.1 Migration `cadastros`: `campeonatos`, `times`, `jogadores` + RLS + `private.is_staff()`
+- [ ] 2.2 Tela: criar/editar campeonato
+- [ ] 2.3 Tela: times e jogadores
+- [ ] 2.4 Edge Function `admin-users` + tela de operadores
+- [ ] 2.5 Páginas públicas do campeonato e do time
 - [ ] CRUD campeonato com regras
 - [ ] CRUD times e jogadores
 - [ ] Edge Function `admin-users` + tela de operadores

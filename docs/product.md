@@ -14,11 +14,11 @@ Campeonatos de bairro são controlados em papel, planilha e grupo de WhatsApp. R
 - Cria e configura campeonatos (regras de pontuação, duração, cartões).
 - Cadastra times e jogadores.
 - Monta a tabela de jogos (rodadas, datas, local).
-- Cria, desativa e atribui **operadores** a campeonatos.
+- Cria e desativa **operadores** (qualquer operador ativo pode controlar qualquer jogo).
 - Pode corrigir qualquer dado, inclusive súmula encerrada.
 
 ### Operador (mesário)
-- Faz login e vê os jogos dos campeonatos em que foi escalado.
+- Faz login e vê os jogos de todos os campeonatos; pode operar qualquer partida.
 - Abre a partida no **modo placar**: inicia/pausa/encerra tempos, marca gols, cartões, substituições.
 - Desfaz lançamento errado enquanto a partida não foi encerrada.
 - Encerra a partida (a súmula fica travada para ele).

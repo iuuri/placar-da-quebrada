@@ -31,3 +31,8 @@ Formato: contexto → decisão → consequência. Adicione novas no fim; não ap
 - **Contexto:** criar usuário no Supabase Auth exige `service_role`, que não pode ir ao navegador.
 - **Decisão:** Edge Function `admin-users` valida que o chamador é admin e cria/desativa operadores. Signup público desligado.
 - **Consequência:** só admin cria contas; a chave privilegiada fica apenas no Supabase.
+
+## ADR-007 — Operador controla qualquer partida
+- **Contexto:** campeonato de bairro com poucos mesários; vincular operador a cada campeonato gera trabalho sem ganho real.
+- **Decisão:** sem tabela `campeonato_operadores`. Todo usuário ativo (admin ou operador) vê todos os campeonatos e pode operar qualquer partida não encerrada. Só admin cadastra.
+- **Consequência:** menos telas e regras. Para restringir no futuro (ex.: várias ligas), criar o vínculo e ajustar `private.pode_operar`.

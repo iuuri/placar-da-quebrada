@@ -13,14 +13,14 @@
 | Recurso / ação | Visitante | Operador | Admin |
 |---|:-:|:-:|:-:|
 | Ver campeonatos **públicos**, jogos, tabela, estatísticas | ✅ | ✅ | ✅ |
-| Ver campeonatos privados/rascunho | ❌ | só vinculados | ✅ |
+| Ver campeonatos privados/rascunho | ❌ | ✅ | ✅ |
 | Criar/editar/excluir campeonato | ❌ | ❌ | ✅ |
 | Criar/editar times e jogadores | ❌ | ❌ | ✅ |
 | Criar/editar partidas (agenda) | ❌ | ❌ | ✅ |
-| Controlar cronômetro / status da partida | ❌ | ✅ partidas dos campeonatos vinculados, não encerradas | ✅ |
+| Controlar cronômetro / status da partida | ❌ | ✅ qualquer partida não encerrada | ✅ |
 | Lançar / anular eventos (gol, cartão…) | ❌ | ✅ idem | ✅ |
 | Editar partida encerrada | ❌ | ❌ | ✅ |
-| Criar/desativar usuários, vincular operadores | ❌ | ❌ | ✅ |
+| Criar/desativar usuários | ❌ | ❌ | ✅ |
 | Ver log de auditoria | ❌ | ❌ | ✅ |
 
 ## Como é garantido
@@ -31,7 +31,9 @@
    - Escrita de operador em `partidas`/`eventos_partida`: `using ((select private.pode_operar(partida_id)))`.
 2. Funções auxiliares no schema `private` (fora da API), `security definer` com `search_path` fixo:
    - `is_admin()` → `profiles.role = 'admin' and ativo`.
-   - `pode_operar(partida_id)` → admin, ou operador ativo vinculado ao campeonato da partida e partida não encerrada.
+   - `is_staff()` → perfil ativo (admin ou operador).
+   - `pode_operar(partida_id)` → admin, ou operador ativo e partida não encerrada. **Operadores não são vinculados a campeonatos** (ADR-007).
+   - Visitante não lê `times.responsavel`/`times.contato` (grant por coluna).
 3. **Criação de usuários** exige a `service_role` key → só dentro da Edge Function `admin-users`, que valida se o chamador é admin antes de agir. A key fica em Supabase Secrets, nunca no frontend.
 4. **Signup público desabilitado** no Supabase Auth.
 5. Frontend esconde o que o usuário não pode fazer (UX), mas a segurança real é o item 1.

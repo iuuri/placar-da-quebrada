@@ -47,7 +47,7 @@ jobs:
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -67,11 +67,21 @@ jobs:
         with:
           name: dist
           path: dist
+      # Cria o projeto Pages na primeira execução; nas seguintes o comando falha por "já existe" e é ignorado.
+      - name: Garantir projeto no Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+          command: pages project create placar-da-quebrada --production-branch=main
       - id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
           command: pages deploy dist --project-name=placar-da-quebrada --branch=${{ github.head_ref || github.ref_name }} --commit-dirty=true
       - name: Comentar URL de preview no PR
         if: github.event_name == 'pull_request'

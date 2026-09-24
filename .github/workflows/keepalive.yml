@@ -18,10 +18,10 @@ jobs:
       - name: Consulta leve na API
         env:
           URL: ${{ vars.VITE_SUPABASE_URL }}
-          KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
           if [ -z "$URL" ]; then echo "::notice::VITE_SUPABASE_URL não configurada."; exit 0; fi
           status=$(curl -s -o /dev/null -w "%{http_code}" \
-            "$URL/rest/v1/campeonatos?select=id&limit=1" \
+            "$URL/rest/v1/profiles?select=id&limit=1" \
             -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
           echo "HTTP $status"

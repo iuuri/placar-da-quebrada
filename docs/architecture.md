@@ -45,6 +45,24 @@
 - Dados via TanStack Query; o client Supabase só é usado em `features/*/api.ts`.
 - `src/types/database.types.ts` gerado com `supabase gen types typescript` (na pipeline ou via MCP do Supabase).
 
+## Identidade visual
+
+Conceito: **placa pintada de várzea**. Letreiro de campo, muro chapiscado, placar escrito à mão. Tokens em `src/index.css` (`@theme`).
+
+| Token | Hex | Uso |
+|---|---|---|
+| `muro` | #eef1f4 | fundo |
+| `muro-escuro` | #c9ced6 | bordas, separadores |
+| `tinta` | #14213d | texto e contornos |
+| `tinta-suave` | #4a5672 | texto secundário |
+| `placa` | #ffc928 | ação principal, marca, destaque do placar |
+| `gramado` | #1f7a3a | ao vivo, sucesso |
+| `cartao` | #d62839 | cartão vermelho, erro |
+
+- Tipografia: **Big Shoulders Display** (títulos, placar, cronômetro; condensada como letreiro de estádio) e **Atkinson Hyperlegible** (texto; leitura no sol, no celular). Auto-hospedadas via `@fontsource`.
+- A marca (placa amarela inclinada com sombra dura) é o único elemento "barulhento"; o resto fica sóbrio.
+- Botões de ação com no mínimo 48px de altura; foco visível; `prefers-reduced-motion` respeitado.
+
 ## Realtime (placar ao vivo)
 
 - Tabelas `partidas` e `eventos_partida` adicionadas à publicação `supabase_realtime`.

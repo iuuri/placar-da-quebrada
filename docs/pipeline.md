@@ -28,14 +28,14 @@ Tudo roda no **GitHub Actions**. Você só faz `git push`; o resto é automátic
 
 Segredos necessários: ver [hosting.md](hosting.md#4-segredos-no-github).
 
-## Scripts npm esperados (criados na Fase 1)
+## Scripts npm
 
 ```json
 {
   "dev": "vite",
   "build": "tsc -b && vite build",
   "typecheck": "tsc -b --noEmit",
-  "lint": "eslint .",
+  "lint": "oxlint --deny-warnings",
   "test": "vitest",
   "preview": "vite preview"
 }

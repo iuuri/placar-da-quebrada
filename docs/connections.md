@@ -14,17 +14,16 @@ Claude Code ──git push──► GitHub ──Actions──► Cloudflare Pag
 | Supabase (consulta) | Claude, via MCP | OAuth do MCP (login no navegador) | Configuração do Claude Code |
 | Supabase (migrations) | GitHub Actions | `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_ID` | GitHub Secrets |
 | Cloudflare Pages (deploy) | GitHub Actions | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | GitHub Secrets |
-| Frontend → Supabase | Navegador do usuário | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (públicas) | GitHub Variables e `.env` local (ignorado pelo git) |
+| Frontend → Supabase | Navegador do usuário | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (públicas) | URL em GitHub Variables, anon key em GitHub Secrets; `.env` local (ignorado pelo git) |
 
 > **Nunca cole tokens, senhas ou a `service_role` key no chat do Claude, em arquivo versionado ou no frontend.** Todos os segredos vão direto nas telas do GitHub e do Supabase.
 
 ## Estado atual deste repositório (24/09/2026)
 
-- Remoto `origin` já configurado: `https://github.com/iuuri/placar-da-quebrada.git` (repositório existe e está vazio).
-- Branch `main` já criada; ainda sem nenhum commit.
-- `git config user.name` e `user.email` **não configurados**, então o primeiro commit vai falhar até você fazer o passo 1.
+- Projeto Supabase criado: ref `uoszdwwqzhilwbsilmkn` (`https://uoszdwwqzhilwbsilmkn.supabase.co`), cadastro público desligado. O ref não é segredo.
+- Repositório `https://github.com/iuuri/placar-da-quebrada`, com o primeiro commit (`d29de1f`) já na `main`. Identidade do git configurada (Iuri).
 - `gh` (GitHub CLI) não instalado. É opcional; sem ele o Claude cria PRs pelo site do GitHub.
-- `.env` local existe e está no `.gitignore` (deve conter só URL e anon key).
+- `.env` local existe, aponta para esse projeto e está no `.gitignore` (deve conter só URL e anon key).
 - O MCP do Supabase aparece no Claude Code, mas **ainda não foi autenticado**.
 
 ## 1. GitHub — permitir que o Claude faça commit e push
@@ -98,7 +97,7 @@ Cadastre tudo em GitHub → Settings → Secrets and variables → Actions (tabe
 - [ ] `SUPABASE_DB_PASSWORD` (secret)
 - [ ] `SUPABASE_PROJECT_ID` (secret)
 - [ ] `VITE_SUPABASE_URL` (variable)
-- [ ] `VITE_SUPABASE_ANON_KEY` (variable)
+- [ ] `VITE_SUPABASE_ANON_KEY` (secret; os workflows leem de `secrets.`)
 - [ ] Environments `production` e `preview` criados
 
 ## 5. Teste de ponta a ponta

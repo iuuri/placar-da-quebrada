@@ -14,7 +14,7 @@
 
 ### RF03 — Campeonatos (admin)
 - CRUD de campeonato: nome, temporada/ano, modalidade (campo, society, futsal), local padrão, status, público/privado.
-- Regras configuráveis: pontos por vitória/empate/derrota, nº de tempos, minutos por tempo, critérios de desempate, cartões para suspensão.
+- Regras configuráveis: pontos por vitória/empate/derrota, nº de tempos, minutos por tempo, critérios de desempate.
 
 ### RF04 — Times (admin)
 - CRUD de times por campeonato: nome, sigla (3 letras), cor, escudo (URL no MVP, upload depois), responsável/contato.

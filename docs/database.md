@@ -50,7 +50,6 @@ Trigger `on_auth_user_created` em `auth.users` cria o profile.
 | pontos_vitoria / pontos_empate / pontos_derrota | smallint | 3 / 1 / 0 |
 | qtd_periodos | smallint | 2 |
 | minutos_periodo | smallint | 25 |
-| amarelos_suspensao | smallint | 3 |
 | criterios_desempate | text[] | ordem de [business-rules.md](business-rules.md) |
 | created_by | uuid → profiles | |
 
@@ -106,7 +105,7 @@ Trigger `on_auth_user_created` em `auth.users` cria o profile.
 - `v_classificacao` — por campeonato/time: pontos, jogos, V, E, D, GP, GC, SG, aproveitamento. Considera só `encerrada`/`wo`, pontos das regras do campeonato. Ordenação por critérios de desempate feita em SQL (critérios simples) + confronto direto no frontend (lib testada com Vitest).
 - `v_artilharia` — gols por jogador (exclui `gol_contra` e anulados).
 - `v_cartoes` — amarelos/vermelhos por jogador.
-- `v_suspensos` — jogadores suspensos para a próxima partida do time.
+- `v_suspensos` — jogadores suspensos para a próxima partida do time (no MVP: só vermelho direto e suspensão manual do admin).
 
 Views criadas com `security_invoker = true` para respeitar o RLS das tabelas base.
 
@@ -114,8 +113,8 @@ Views criadas com `security_invoker = true` para respeitar o RLS das tabelas bas
 
 | função | quem | faz |
 |---|---|---|
-| `is_admin()` | interna | bool |
-| `pode_operar(partida_id)` | interna | bool |
+| `private.is_admin()` | interna (schema `private`, fora da API) | bool |
+| `private.pode_operar(partida_id)` | interna | bool |
 | `server_time()` | todos | `now()` para sincronizar relógio |
 | `partida_iniciar_periodo(id)` | operador/admin | status em_andamento, play |
 | `partida_pausar(id)` / `partida_retomar(id)` | operador/admin | pausa/retoma cronômetro |
@@ -137,17 +136,31 @@ create policy "X_select_publico" on public.X for select
 
 -- leitura total para usuários logados ativos
 create policy "X_select_logado" on public.X for select
-  to authenticated using ( public.is_admin() or /* vinculado */ ... );
+  to authenticated using ( (select private.is_admin()) or /* vinculado */ ... );
 
 -- escrita admin
 create policy "X_admin_all" on public.X for all
-  to authenticated using (public.is_admin()) with check (public.is_admin());
+  to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
 ```
 
 Especiais:
-- `partidas` update e `eventos_partida` insert/update: `public.pode_operar(partida_id)`.
+- `partidas` update e `eventos_partida` insert/update: `(select private.pode_operar(partida_id))`.
 - `profiles`: usuário lê o próprio; admin lê/edita todos; ninguém altera o próprio `role`.
 - `auditoria`: select só admin; insert só via trigger (`security definer`).
+
+## Exposição na Data API
+
+Desde 2026 o Supabase **não expõe tabelas novas** do schema `public` automaticamente. Toda migration que cria tabela deve:
+
+1. `alter table ... enable row level security;` e criar as políticas;
+2. `revoke all on table ... from anon, authenticated;`
+3. `grant` só os privilégios necessários (ex.: `grant select ... to anon, authenticated`), inclusive por coluna quando fizer sentido.
+
+Funções usadas pelas políticas ficam no schema `private` (não exposto), com `security definer`, `set search_path = ''` e `grant execute` só para `authenticated`.
+
+## Como testar uma migration sem banco local
+
+Não há Docker nem banco local. Antes do PR, valide o SQL no PGlite (Postgres em WebAssembly) com um mock mínimo do schema `auth` (`auth.users`, `auth.uid()` lendo `request.jwt.claim.sub`, roles `anon` e `authenticated`) e rode consultas como cada papel. No PR, o `supabase.yml` mostra o `db push --dry-run`; depois do merge, confira em Dashboard → Advisors.
 
 ## Convenções de migration
 

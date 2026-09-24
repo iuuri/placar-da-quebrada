@@ -16,7 +16,9 @@ Web app (PWA) para campeonatos de futebol de bairro: campeonatos, times, jogador
 
 ## Stack oficial
 
-React 19 + TypeScript + Vite · Tailwind CSS + shadcn/ui · React Router · TanStack Query · `@supabase/supabase-js` · Zod + React Hook Form · Vitest (+ Testing Library) · Playwright (E2E, fase posterior) · ESLint + Prettier · PWA via `vite-plugin-pwa`.
+React 19 + TypeScript 6 + Vite 8 · Tailwind CSS 4 (componentes próprios no estilo shadcn em `src/components/ui`) · React Router 8 · TanStack Query 5 · `@supabase/supabase-js` · Zod 4 + React Hook Form · Vitest (+ Testing Library) · oxlint · Playwright (E2E, fase posterior) · PWA via `vite-plugin-pwa` (fase posterior).
+
+Versões fixadas (sem `^`) para libs de runtime; sempre commitar o `package-lock.json`.
 
 Não adicionar dependências fora dessa lista sem justificar.
 

@@ -1,0 +1,26 @@
+# dependências e build
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# ambiente — nunca versionar segredos
+.env
+.env.*
+!.env.example
+
+# supabase CLI
+supabase/.temp/
+supabase/.branches/
+
+# editores / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# Claude Code (configurações pessoais)
+.claude/settings.local.json

@@ -14,7 +14,7 @@ Claude Code ──git push──► GitHub ──Actions──► Cloudflare Pag
 | Supabase (consulta) | Claude, via MCP | OAuth do MCP (login no navegador) | Configuração do Claude Code |
 | Supabase (migrations) | GitHub Actions | `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_ID` | GitHub Secrets |
 | Cloudflare Pages (deploy) | GitHub Actions | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | GitHub Secrets |
-| Frontend → Supabase | Navegador do usuário | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (públicas) | GitHub Variables e `.env` local (ignorado pelo git) |
+| Frontend → Supabase | Navegador do usuário | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (públicas) | URL em GitHub Variables, anon key em GitHub Secrets; `.env` local (ignorado pelo git) |
 
 > **Nunca cole tokens, senhas ou a `service_role` key no chat do Claude, em arquivo versionado ou no frontend.** Todos os segredos vão direto nas telas do GitHub e do Supabase.
 
@@ -97,7 +97,7 @@ Cadastre tudo em GitHub → Settings → Secrets and variables → Actions (tabe
 - [ ] `SUPABASE_DB_PASSWORD` (secret)
 - [ ] `SUPABASE_PROJECT_ID` (secret)
 - [ ] `VITE_SUPABASE_URL` (variable)
-- [ ] `VITE_SUPABASE_ANON_KEY` (variable)
+- [ ] `VITE_SUPABASE_ANON_KEY` (secret; os workflows leem de `secrets.`)
 - [ ] Environments `production` e `preview` criados
 
 ## 5. Teste de ponta a ponta

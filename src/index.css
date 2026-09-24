@@ -1,0 +1,42 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/big-shoulders-display';
+@import '@fontsource/atkinson-hyperlegible/400.css';
+@import '@fontsource/atkinson-hyperlegible/700.css';
+
+/* Paleta "placa pintada de várzea" — ver docs/architecture.md#identidade-visual */
+@theme {
+  --color-muro: #eef1f4;
+  --color-muro-escuro: #c9ced6;
+  --color-tinta: #14213d;
+  --color-tinta-suave: #4a5672;
+  --color-placa: #ffc928;
+  --color-placa-escura: #e0a800;
+  --color-gramado: #1f7a3a;
+  --color-cartao: #d62839;
+
+  --font-display: 'Big Shoulders Display Variable', 'Arial Narrow', sans-serif;
+  --font-sans: 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-muro text-tinta font-sans antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-3 outline-offset-2 outline-tinta;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

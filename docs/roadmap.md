@@ -11,11 +11,12 @@ Cada fase termina **publicada** em `placar-da-quebrada.pages.dev`. Uma fase = um
 - [ ] Autenticar o MCP do Supabase no Claude Code
 
 ## Fase 1 — Esqueleto no ar
-- [ ] Scaffold Vite + React + TS + Tailwind + shadcn/ui + ESLint + Vitest + scripts npm
-- [ ] `supabase/config.toml` (projeto CLI) e client `src/lib/supabase.ts`
-- [ ] Migration 1: `profiles`, enums, trigger de novo usuário, `is_admin()`
-- [ ] Login / logout / recuperar senha; guardas de rota
-- [ ] Layout público + layout painel; rota 404 com fallback SPA (`public/_redirects`: `/* /index.html 200`)
+- [x] Scaffold Vite + React + TS + Tailwind + oxlint + Vitest + scripts npm
+- [x] `supabase/config.toml` (projeto CLI) e client `src/lib/supabase.ts`
+- [x] Migration 1: `profiles`, enums, trigger de novo usuário, `private.is_admin()`
+- [x] Login / logout / recuperar senha; guardas de rota
+- [x] Layout público + layout painel; rota 404 com fallback SPA (`public/_redirects`: `/* /index.html 200`)
+- [ ] Configurar URLs do Auth no Supabase e criar o primeiro admin ([permissions.md](permissions.md#bootstrap-do-primeiro-admin))
 - **Entrega:** site no ar, admin consegue logar.
 
 ## Fase 2 — Cadastros (admin)

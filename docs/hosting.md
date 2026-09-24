@@ -68,7 +68,7 @@ Repositório → *Settings → Secrets and variables → Actions*:
 | `SUPABASE_DB_PASSWORD` | Secret | migrations |
 | `SUPABASE_PROJECT_ID` | Secret | migrations / functions |
 | `VITE_SUPABASE_URL` | Variable | build do frontend + keepalive |
-| `VITE_SUPABASE_ANON_KEY` | Variable | build do frontend + keepalive (é pública por design) |
+| `VITE_SUPABASE_ANON_KEY` | Secret | build do frontend + keepalive (é pública por design, mas fica em Secrets) |
 
 Crie também o *Environment* `production` (Settings → Environments) — os deploys usam ele, e você pode exigir aprovação manual se quiser.
 

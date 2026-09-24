@@ -27,9 +27,9 @@
 
 1. **RLS em todas as tabelas** (ver [database.md](database.md#rls)).
    - `select` público: `using (campeonato publico = true)` para `anon`.
-   - Escrita de admin: `using (public.is_admin())`.
-   - Escrita de operador em `partidas`/`eventos_partida`: `using (public.pode_operar(partida_id))`.
-2. Funções auxiliares `security definer` com `search_path` fixo:
+   - Escrita de admin: `using ((select private.is_admin()))`.
+   - Escrita de operador em `partidas`/`eventos_partida`: `using ((select private.pode_operar(partida_id)))`.
+2. Funções auxiliares no schema `private` (fora da API), `security definer` com `search_path` fixo:
    - `is_admin()` → `profiles.role = 'admin' and ativo`.
    - `pode_operar(partida_id)` → admin, ou operador ativo vinculado ao campeonato da partida e partida não encerrada.
 3. **Criação de usuários** exige a `service_role` key → só dentro da Edge Function `admin-users`, que valida se o chamador é admin antes de agir. A key fica em Supabase Secrets, nunca no frontend.
@@ -41,3 +41,7 @@
 1. Supabase Dashboard → Authentication → Users → *Add user* (e-mail + senha, "auto confirm").
 2. SQL Editor: `update public.profiles set role = 'admin' where email = '<seu-email>';`
    (o trigger `on_auth_user_created` cria o profile como `operador` por padrão.)
+
+## Recuperação de senha
+
+Sem SMTP próprio, o Supabase Free só envia e-mail para membros da organização no Supabase (o admin). Operadores que esquecerem a senha pedem ao admin, que define uma nova pela tela de usuários (Fase 2) ou pelo Dashboard → Authentication → Users. Configurar SMTP gratuito (ex.: Resend, Brevo) resolve isso numa fase futura.

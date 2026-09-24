@@ -61,6 +61,18 @@ export const router = createBrowserRouter([
             path: 'campeonatos/:id',
             element: sobDemanda(() => import('@/features/campeonatos/pages/CampeonatoFormPage'), 'CampeonatoFormPage'),
           },
+          {
+            path: 'campeonatos/:id/times',
+            element: sobDemanda(() => import('@/features/times/pages/TimesPage'), 'TimesPage'),
+          },
+          {
+            path: 'campeonatos/:id/times/novo',
+            element: sobDemanda(() => import('@/features/times/pages/TimeFormPage'), 'TimeFormPage'),
+          },
+          {
+            path: 'campeonatos/:id/times/:timeId',
+            element: sobDemanda(() => import('@/features/times/pages/TimeFormPage'), 'TimeFormPage'),
+          },
         ],
       },
     ],

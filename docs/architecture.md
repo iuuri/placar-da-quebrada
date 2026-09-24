@@ -38,7 +38,8 @@
 | `/painel/jogo/:id` | operador/admin | **Modo placar** (controle ao vivo) |
 | `/admin` | admin | Lista de campeonatos |
 | `/admin/campeonatos/novo`, `/admin/campeonatos/:id` | admin | Criar/editar/apagar campeonato e regras |
-| `/admin/campeonatos/:id/times` | admin | Times e jogadores |
+| `/admin/campeonatos/:id/times` | admin | Lista de times |
+| `/admin/campeonatos/:id/times/novo`, `/admin/campeonatos/:id/times/:timeId` | admin | Criar/editar/apagar time e gerenciar o elenco |
 | `/admin/campeonatos/:id/partidas` | admin | Agenda e operadores |
 | `/admin/usuarios` | admin | Operadores |
 

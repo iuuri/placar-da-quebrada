@@ -51,7 +51,7 @@ Se no futuro o campeonato tiver patrocínio/cobrança, o Vercel Hobby deixaria d
 ## 3. Cloudflare Pages
 
 1. Crie conta em cloudflare.com.
-2. *Workers & Pages → Create → Pages → Direct Upload* → nome do projeto `placar-da-quebrada` (só cria o projeto; o upload será feito pela pipeline).
+2. **Não crie nada em Workers & Pages.** O `frontend.yml` cria o projeto **Pages** `placar-da-quebrada` sozinho no primeiro deploy (`wrangler pages project create`). Não use *Import a repository* / conexão com o GitHub: isso cria um **Worker** com build próprio, que falha e duplica a pipeline.
 3. Anote o **Account ID** (barra lateral do dashboard) → `CLOUDFLARE_ACCOUNT_ID`.
 4. *My Profile → API Tokens → Create Token* → template **Edit Cloudflare Workers** (ou permissão custom *Account → Cloudflare Pages → Edit*) → `CLOUDFLARE_API_TOKEN`.
 5. Site ficará em `https://placar-da-quebrada.pages.dev`.

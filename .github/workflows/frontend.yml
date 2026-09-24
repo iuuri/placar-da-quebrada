@@ -67,6 +67,14 @@ jobs:
         with:
           name: dist
           path: dist
+      # Cria o projeto Pages na primeira execução; nas seguintes o comando falha por "já existe" e é ignorado.
+      - name: Garantir projeto no Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create placar-da-quebrada --production-branch=main
       - id: deploy
         uses: cloudflare/wrangler-action@v3
         with:

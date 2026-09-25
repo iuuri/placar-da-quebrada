@@ -19,6 +19,8 @@ type Props = {
   despachar: (a: Acao) => void
   // Chamado ao iniciar/continuar e no botão Recolher: a tela troca pelo cronômetro resumido.
   onRecolher: () => void
+  // Janela flutuante (picture-in-picture); ausente quando o navegador não suporta.
+  flutuante?: { aberta: boolean; alternar: () => void; erro: string | null }
 }
 
 const MODOS: { valor: Modo; rotulo: string }[] = [
@@ -92,7 +94,7 @@ function Acrescimo({ timer, despachar, destaque }: { timer: EstadoTimer; despach
   )
 }
 
-export function Cronometro({ timer, agora, despachar, onRecolher }: Props) {
+export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: Props) {
   const fim = acabou(timer, agora)
   const comecou = decorridoMs(timer, agora) > 0
   const minutos = Math.floor(timer.duracaoSeg / 60)
@@ -107,10 +109,36 @@ export function Cronometro({ timer, agora, despachar, onRecolher }: Props) {
 
   return (
     <section aria-label="Cronômetro" className="flex flex-col gap-4 rounded-md bg-tinta p-4 text-muro sm:p-5">
-      {comecou && !fim ? (
-        <button type="button" onClick={onRecolher} className="-mb-2 self-end text-sm font-bold underline underline-offset-4">
-          Recolher cronômetro
-        </button>
+      {(comecou && !fim) || flutuante ? (
+        <div className="-mb-2 flex flex-wrap items-center justify-between gap-2">
+          {flutuante ? (
+            <button
+              type="button"
+              onClick={flutuante.alternar}
+              aria-pressed={flutuante.aberta}
+              className="min-h-10 rounded-md border-2 border-muro/60 px-2.5 text-sm font-bold"
+            >
+              {flutuante.aberta ? '📺 Fechar janela flutuante' : '📺 Janela flutuante'}
+            </button>
+          ) : (
+            <span />
+          )}
+          {comecou && !fim ? (
+            <button
+              type="button"
+              onClick={onRecolher}
+              aria-label="Recolher cronômetro"
+              className="min-h-10 text-sm font-bold underline underline-offset-4"
+            >
+              Recolher ▴
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {flutuante?.erro ? (
+        <p role="alert" className="-mb-2 rounded bg-cartao px-2 py-1 text-sm font-bold text-white">
+          {flutuante.erro}
+        </p>
       ) : null}
       <div role="radiogroup" aria-label="Tipo de contagem" className="grid grid-cols-2 gap-1 rounded-md bg-white/10 p-1">
         {MODOS.map((m) => (

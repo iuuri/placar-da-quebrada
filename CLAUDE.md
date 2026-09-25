@@ -1,75 +1,42 @@
 # Placar da Quebrada — Instruções para o Claude Code
 
-Leia este arquivo antes de qualquer tarefa. Detalhes ficam em `docs/`.
+## Objetivo atual
 
-## Objetivo
+Um único app de página única: **cronômetro (progressivo/regressivo) + placar com nome dos times + anotações + resetar tudo**. Sem login, sem banco de dados, sem backend. Os dados ficam no `localStorage` do aparelho.
 
-Web app (PWA) para campeonatos de futebol de bairro: campeonatos, times, jogadores, partidas, placar ao vivo, cronômetro, gols, cartões, súmula e classificação. Três perfis: **admin**, **operador** e **visitante** (não logado, só leitura).
+A versão anterior (campeonatos com Supabase) está arquivada na branch `arquivo/v1-campeonatos` / tag `v1-campeonatos`. Não trazer código de lá sem o usuário pedir.
 
-## Restrição principal
+## Hospedagem
 
-**Tudo hospedado em serviços gratuitos na nuvem. Nada em máquina local.**
-- Frontend: Cloudflare Pages (build via GitHub Actions).
-- Backend + banco: Supabase (Postgres, Auth, Realtime, Edge Functions).
-- Não criar servidor Node próprio, não usar Docker, não depender de `supabase start` local.
-- Migrations são aplicadas no Supabase pela pipeline (`supabase db push`), não manualmente.
+- Cloudflare Pages, projeto `placar-da-quebrada` → https://placar-da-quebrada.pages.dev
+- Deploy pelo GitHub Actions (`frontend.yml`): PR gera preview; merge na `main` publica.
+- Secrets usados: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
 
-## Stack oficial
+## Stack
 
-React 19 + TypeScript 6 + Vite 8 · Tailwind CSS 4 (componentes próprios no estilo shadcn em `src/components/ui`) · React Router 8 · TanStack Query 5 · `@supabase/supabase-js` · Zod 4 + React Hook Form · Vitest (+ Testing Library) · oxlint · Playwright (E2E, fase posterior) · PWA via `vite-plugin-pwa` (fase posterior).
+React 19 + TypeScript 6 + Vite 8 · Tailwind CSS 4 · Vitest + Testing Library · oxlint. Não adicionar dependências sem justificar.
 
-Versões fixadas (sem `^`) para libs de runtime; sempre commitar o `package-lock.json`.
-
-Não adicionar dependências fora dessa lista sem justificar.
-
-## Estrutura de pastas (alvo)
+## Estrutura
 
 ```text
 src/
-  app/            # rotas, layout, providers
-  features/       # por domínio: campeonatos, times, jogadores, partidas, classificacao, usuarios, auth
-    <feature>/
-      api.ts      # chamadas ao Supabase (único lugar que usa o client)
-      hooks.ts    # hooks TanStack Query
-      components/
-      pages/
-      schemas.ts  # Zod
-  components/ui/  # shadcn
-  lib/            # supabase client, utils, cronometro, formatadores
-  types/          # database.types.ts gerado pelo Supabase
-supabase/
-  migrations/     # SQL versionado (única forma de alterar o banco)
-  functions/      # Edge Functions (Deno)
-  seed.sql
-docs/
-.github/workflows/
+  App.tsx          # tela única e efeitos (alarme, tela acesa)
+  estado.ts        # estado, reducer e persistência no localStorage
+  tempo.ts         # cálculos do cronômetro (funções puras, testadas)
+  components/      # Placar, Cronometro, Anotacoes, ResetarTudo, Botao
+  lib/             # utils (cn), recursos do aparelho (som, vibração, wake lock)
 ```
 
-## Regras de desenvolvimento
+## Regras
 
-1. Leia a documentação relevante em `docs/` antes de implementar.
-2. Tarefas pequenas, uma fase do [roadmap](docs/roadmap.md) por vez. Não implementar fora do escopo pedido.
-3. Não inventar regra de negócio: se não estiver em [docs/business-rules.md](docs/business-rules.md), pergunte.
-4. Toda mudança de banco = nova migration em `supabase/migrations/` (nome `AAAAMMDDHHMMSS_descricao.sql`). Nunca editar migration já aplicada.
-5. Toda tabela nova: RLS habilitado + políticas explícitas conforme [docs/permissions.md](docs/permissions.md).
-6. Segurança fica no banco (RLS / funções `security definer`). Esconder botão no frontend não é segurança.
-7. Nunca colocar `service_role` key, senha de banco ou tokens no frontend ou no repositório. Frontend só usa `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
-8. Classificação, artilharia e suspensões são **derivadas** (views SQL), nunca digitadas.
-9. Placar é derivado dos eventos da partida (gols); colunas de placar em `partidas` são cache mantido por trigger.
-10. Cronômetro usa timestamps do servidor (ver [docs/architecture.md](docs/architecture.md#cronômetro)); nunca `setInterval` como fonte de verdade.
-11. Mobile-first: o operador usa celular na beira do campo. Botões grandes, poucas telas, funciona com internet ruim.
-12. Textos da interface em português do Brasil.
-13. Não fazer commit/push sem o usuário pedir. Trabalhar em branch `feat/*` ou `fix/*` e abrir PR para a `main`; nunca dar push direto na `main` depois do primeiro commit.
-14. Conexões (GitHub, MCP do Supabase, secrets): ver [docs/connections.md](docs/connections.md). Nunca pedir tokens no chat.
+1. Cronômetro usa timestamps (`iniciadoEm` + `acumuladoMs`); `setInterval` só redesenha a tela.
+2. Mobile-first: botões grandes, funciona em 375px, sem rolagem lateral.
+3. Textos da interface em português do Brasil.
+4. Ações destrutivas (resetar) sempre com confirmação na própria tela, nunca `window.confirm`.
+5. Não fazer commit/push sem o usuário pedir. Trabalhar em branch `feat/*` ou `fix/*` e abrir PR para a `main` (a `main` é protegida).
 
-## Qualidade antes de concluir
+## Antes de concluir
 
 ```bash
-npm run typecheck && npm run lint && npm run test && npm run build
+npm run typecheck && npm run lint && npm run test -- --run && npm run build
 ```
-
-Revise estados de loading/erro/vazio e a tela em 375px de largura.
-
-## Skills recomendadas
-
-Ver [docs/skills.md](docs/skills.md). Use `supabase:supabase` e `supabase:supabase-postgres-best-practices` para qualquer tarefa de banco/RLS/Auth; `frontend-design`/`ui-ux-pro-max` para telas.

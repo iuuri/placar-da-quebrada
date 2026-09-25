@@ -12,7 +12,7 @@ Timer e placar para jogos de futebol de bairro, direto no navegador do celular, 
   - **Acréscimo**: botões +1', +2', +3', +5' (também depois que o tempo acabou); no progressivo, apita quando o acréscimo termina
   - Continua certo se a tela apagar ou a página recarregar
   - Mantém a tela acesa enquanto o tempo corre (quando o aparelho permite)
-  - **Janela flutuante** (experimental): botão 📺 no cronômetro completo abre o tempo, o placar e as punições numa janelinha que fica por cima de outros apps ao minimizar o navegador (picture-in-picture; depende do navegador)
+  - **Janela flutuante** (experimental): botão 📺 no cronômetro completo abre o tempo, o placar e as punições numa janelinha que fica por cima de outros apps ao minimizar o navegador (picture-in-picture; depende do navegador). Fecha sozinha quando a pessoa volta para a página. Abrir sozinha ao minimizar não é possível: os navegadores só permitem isso para conteúdo com som
   - Depois de iniciar, vira um **cronômetro pequeno no topo, ao lado da logo** (tempo, Pausar/Continuar e ▾ para abrir), que acompanha a rolagem e libera a tela para o placar e as anotações; abre sozinho quando o tempo acaba
 - **Placar** com o nome dos dois times, gols (+1 / −1) e **faltas por time**
 - **Registros por time**: toque em 🟨 amarelo, 🟥 vermelho, ⚽ gol, 🔁 troca, ⏱️ punição 2' ou 📝 anotar e escolha o time num pop-up (nome do jogador opcional). O minuto do jogo é registrado sozinho. Cada registro vira um bloco (mais recente primeiro, com rolagem) que pode ser editado (texto e time) ou apagado

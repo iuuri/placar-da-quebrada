@@ -35,3 +35,54 @@ describe('janela flutuante', () => {
     expect(suportaFlutuante()).toBe(false)
   })
 })
+
+describe('abrirFlutuante', () => {
+  let visibilidade: DocumentVisibilityState = 'visible'
+
+  beforeEach(() => {
+    visibilidade = 'visible'
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => visibilidade })
+    const ctx = { fillRect: vi.fn(), fillText: vi.fn(), measureText: () => ({ width: 10 }) }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D)
+    Object.defineProperty(HTMLCanvasElement.prototype, 'captureStream', {
+      configurable: true,
+      value: () => ({ getTracks: () => [{ stop: vi.fn() }] }),
+    })
+    Object.defineProperty(HTMLMediaElement.prototype, 'srcObject', { configurable: true, set: () => {} })
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
+    Object.defineProperty(HTMLVideoElement.prototype, 'requestPictureInPicture', {
+      configurable: true,
+      value: vi.fn().mockResolvedValue({}),
+    })
+  })
+
+  afterEach(() => vi.restoreAllMocks())
+
+  function mudarVisibilidade(estado: DocumentVisibilityState) {
+    visibilidade = estado
+    document.dispatchEvent(new Event('visibilitychange'))
+  }
+
+  it('fecha sozinha quando a pessoa volta para a página depois de sair', async () => {
+    const onFechar = vi.fn()
+    const { abrirFlutuante } = await import('./flutuante')
+    await abrirFlutuante(() => jogo, onFechar)
+    expect(document.querySelector('video')).not.toBeNull()
+
+    mudarVisibilidade('hidden')
+    expect(onFechar).not.toHaveBeenCalled()
+    mudarVisibilidade('visible')
+    expect(onFechar).toHaveBeenCalledTimes(1)
+    expect(document.querySelector('video')).toBeNull()
+  })
+
+  it('não fecha se a pessoa não saiu da página', async () => {
+    const onFechar = vi.fn()
+    const { abrirFlutuante } = await import('./flutuante')
+    const fechar = await abrirFlutuante(() => jogo, onFechar)
+    mudarVisibilidade('visible')
+    expect(onFechar).not.toHaveBeenCalled()
+    fechar()
+    expect(onFechar).toHaveBeenCalledTimes(1)
+  })
+})

@@ -104,11 +104,26 @@ export async function abrirFlutuante(lerEstado: () => Estado, onFechar: () => vo
   // setInterval (e não requestAnimationFrame): continua rodando com a página em segundo plano.
   const intervalo = window.setInterval(pintar, 250)
 
+  const fechar = () => {
+    if (document.pictureInPictureElement === video) void document.exitPictureInPicture().catch(() => undefined)
+    liberar()
+  }
+
+  // Fecha sozinha quando a pessoa volta para a página depois de sair dela (minimizou, trocou de app ou de aba).
+  // Abrir sozinha ao minimizar não é possível: o navegador só permite isso para conteúdo com som.
+  let saiuDaPagina = false
+  const aoMudarVisibilidade = () => {
+    if (document.visibilityState === 'hidden') saiuDaPagina = true
+    else if (saiuDaPagina) fechar()
+  }
+  document.addEventListener('visibilitychange', aoMudarVisibilidade)
+
   let fechado = false
-  const liberar = () => {
+  function liberar() {
     if (fechado) return
     fechado = true
     window.clearInterval(intervalo)
+    document.removeEventListener('visibilitychange', aoMudarVisibilidade)
     stream.getTracks().forEach((track) => track.stop())
     video.remove()
     onFechar()
@@ -123,8 +138,5 @@ export async function abrirFlutuante(lerEstado: () => Estado, onFechar: () => vo
     throw erro
   }
 
-  return () => {
-    if (document.pictureInPictureElement === video) void document.exitPictureInPicture().catch(() => undefined)
-    liberar()
-  }
+  return fechar
 }

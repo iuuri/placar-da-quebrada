@@ -8,7 +8,8 @@ A versão anterior (campeonatos com Supabase) está arquivada na branch `arquivo
 
 ## Hospedagem
 
-- Cloudflare Pages, projeto `placar-da-quebrada` → https://placar-da-quebrada.pages.dev
+- Cloudflare Pages, projeto `placardaquebrada` → https://placardaquebrada.pages.dev (endereço principal; previews de PR também saem nele)
+- Projeto antigo `placar-da-quebrada` → https://placar-da-quebrada.pages.dev: recebe a mesma versão da `main` para não quebrar links antigos nem os jogos salvos nos aparelhos (o `localStorage` é separado por endereço)
 - Deploy pelo GitHub Actions (`frontend.yml`): PR gera preview; merge na `main` publica.
 - Secrets usados: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
 

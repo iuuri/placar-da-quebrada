@@ -196,7 +196,7 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
     doc.setTextColor(74, 86, 114)
-    doc.text('Gerado pelo Placar da Quebrada - placar-da-quebrada.pages.dev - documento protegido contra edição', L, 290)
+    doc.text('Gerado pelo Placar da Quebrada - placardaquebrada.pages.dev - documento protegido contra edição', L, 290)
     doc.text(`${p}/${paginas}`, 210 - L, 290, { align: 'right' })
   }
 

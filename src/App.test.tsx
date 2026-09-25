@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { App } from './App'
 
 beforeEach(() => {
@@ -50,13 +50,49 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
     act(() => vi.advanceTimersByTime(12 * 60_000 + 5_000))
+    fireEvent.change(screen.getByLabelText(/Jogador ou observação/), { target: { value: 'Zé' } })
     fireEvent.click(screen.getByRole('button', { name: '🟨 Amarelo' }))
-    expect(screen.getByLabelText('Anotações da partida')).toHaveValue("13' 🟨 ")
+    const blocos = within(screen.getByRole('list', { name: /Anotações/ })).getAllByRole('listitem')
+    expect(blocos[0]).toHaveTextContent("13'")
+    expect(blocos[0]).toHaveTextContent('Amarelo')
+    expect(blocos[0]).toHaveTextContent('Zé')
+    expect(screen.getByLabelText(/Jogador ou observação/)).toHaveValue('')
 
     fireEvent.click(screen.getByRole('button', { name: 'Resetar tudo' }))
     fireEvent.click(screen.getByRole('button', { name: 'Sim, zerar tudo' }))
-    expect(screen.getByLabelText('Anotações da partida')).toHaveValue('')
+    expect(screen.queryByRole('list', { name: /Anotações/ })).not.toBeInTheDocument()
     expect(screen.getByLabelText('Gols de Time A')).toHaveTextContent('0')
     expect(tempo()).toBe('00:00')
+  })
+
+  it('anotações: mais recente primeiro, editar e apagar com confirmação', () => {
+    render(<App />)
+    const campo = screen.getByLabelText(/Jogador ou observação/)
+    fireEvent.change(campo, { target: { value: 'primeira' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Anotar observação' }))
+    fireEvent.change(campo, { target: { value: 'segunda' } })
+    fireEvent.click(screen.getByRole('button', { name: '⚽ Gol' }))
+
+    const lista = screen.getByRole('list', { name: /Anotações/ })
+    let blocos = within(lista).getAllByRole('listitem')
+    expect(blocos[0]).toHaveTextContent('segunda')
+    expect(blocos[1]).toHaveTextContent('primeira')
+
+    fireEvent.click(within(blocos[1]).getByRole('button', { name: 'Editar' }))
+    fireEvent.change(within(blocos[1]).getByLabelText('Texto da anotação'), { target: { value: 'corrigida' } })
+    fireEvent.click(within(blocos[1]).getByRole('button', { name: 'Salvar' }))
+    expect(blocos[1]).toHaveTextContent('corrigida')
+
+    fireEvent.click(within(blocos[0]).getByRole('button', { name: 'Apagar' }))
+    fireEvent.click(within(blocos[0]).getByRole('button', { name: 'Sim, apagar' }))
+    blocos = within(lista).getAllByRole('listitem')
+    expect(blocos).toHaveLength(1)
+    expect(blocos[0]).toHaveTextContent('corrigida')
+  })
+
+  it('não cria anotação vazia pelo botão Anotar', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Anotar observação' }))
+    expect(screen.queryByRole('list', { name: /Anotações/ })).not.toBeInTheDocument()
   })
 })

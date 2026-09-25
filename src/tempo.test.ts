@@ -1,4 +1,4 @@
-import { ESTADO_INICIAL, reducer } from './estado'
+import { converterTextoAntigo, ESTADO_INICIAL, reducer } from './estado'
 import { acabou, acrescimoMs, exibidoMs, formatar, iniciar, minutoDeJogo, pausar, type EstadoTimer } from './tempo'
 
 const base: EstadoTimer = { modo: 'progressivo', duracaoSeg: 60, rodando: false, iniciadoEm: null, acumuladoMs: 0 }
@@ -73,7 +73,26 @@ describe('reducer', () => {
 
   it('resetar tudo volta ao estado inicial', () => {
     let e = reducer(ESTADO_INICIAL, { tipo: 'gol', lado: 'casa', delta: 1 })
-    e = reducer(e, { tipo: 'anotacoes', texto: 'oi' })
+    e = reducer(e, { tipo: 'adicionarNota', nota: { id: '1', tipo: 'nota', minuto: 3, texto: 'oi' } })
     expect(reducer(e, { tipo: 'resetarTudo' })).toEqual(ESTADO_INICIAL)
+  })
+})
+
+describe('notas', () => {
+  it('novas entram no topo e o texto é limitado', () => {
+    let e = reducer(ESTADO_INICIAL, { tipo: 'adicionarNota', nota: { id: 'a', tipo: 'gol', minuto: 2, texto: ' Zé ' } })
+    e = reducer(e, { tipo: 'adicionarNota', nota: { id: 'b', tipo: 'nota', minuto: 5, texto: 'x'.repeat(200) } })
+    expect(e.notas.map((n) => n.id)).toEqual(['b', 'a'])
+    expect(e.notas[1].texto).toBe('Zé')
+    expect(e.notas[0].texto).toHaveLength(140)
+  })
+
+  it('converte o texto livre da versão anterior em blocos', () => {
+    const notas = converterTextoAntigo(["12' 🟨 Zé", '', 'observação solta', "30' ⚽ Tião"].join('\n'))
+    expect(notas).toEqual([
+      { id: 'antiga-2', minuto: 30, tipo: 'gol', texto: 'Tião' },
+      { id: 'antiga-1', minuto: 0, tipo: 'nota', texto: 'observação solta' },
+      { id: 'antiga-0', minuto: 12, tipo: 'amarelo', texto: 'Zé' },
+    ])
   })
 })

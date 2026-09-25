@@ -46,7 +46,7 @@ export function Anotacoes({ notas, placar, minuto, decorridoMs, despachar }: Pro
         Anotações {notas.length > 0 ? <span className="text-tinta-suave">({notas.length})</span> : null}
       </h2>
 
-      <div className="flex flex-col gap-2 rounded-md bg-white p-3">
+      <div className="flex flex-col gap-2 rounded-md bg-painel p-3">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2">
           {ORDEM_TIPOS.map((tipo) => (
             <Botao
@@ -119,7 +119,7 @@ function EscolherTime({
           onChange={(e) => setTexto(e.target.value)}
           placeholder={geral ? 'Ex.: jogo parado por chuva' : 'Ex.: Zé, camisa 10'}
           autoComplete="off"
-          className="min-h-12 rounded-md border-2 border-muro-escuro bg-white px-3 font-normal focus-visible:border-tinta focus-visible:outline-none"
+          className="min-h-12 rounded-md border-2 border-muro-escuro bg-muro px-3 font-normal focus-visible:border-tinta focus-visible:outline-none"
         />
       </label>
       <div className="flex flex-col gap-2">
@@ -156,7 +156,7 @@ function BlocoNota({ nota, nomes, despachar }: { nota: Nota; nomes: Nomes; despa
   const opcoesLado: (Lado | null)[] = nota.tipo === 'nota' ? ['casa', 'visitante', null] : ['casa', 'visitante']
 
   return (
-    <li className={cn('flex flex-col gap-2 rounded-md border-l-8 bg-white p-3', tipo.faixa)}>
+    <li className={cn('flex flex-col gap-2 rounded-md border-l-8 bg-painel p-3', tipo.faixa)}>
       <div className="flex items-start gap-3">
         <span className="w-12 shrink-0 font-display text-3xl font-black leading-none tabular-nums">{nota.minuto}'</span>
         <div className="min-w-0 flex-1">
@@ -204,7 +204,7 @@ function BlocoNota({ nota, nomes, despachar }: { nota: Nota; nomes: Nomes; despa
                 onClick={() => setLadoRascunho(lado)}
                 className={cn(
                   'min-h-10 rounded-md border-2 px-3 text-sm font-bold',
-                  ladoRascunho === lado ? 'border-tinta bg-tinta text-muro' : 'border-muro-escuro bg-white',
+                  ladoRascunho === lado ? 'border-tinta bg-tinta text-muro' : 'border-muro-escuro bg-painel',
                 )}
               >
                 {lado ? nomes[lado] : 'Geral'}

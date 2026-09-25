@@ -38,7 +38,7 @@ export function Dialogo({ titulo, onFechar, children, largo = false }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-tinta/60 p-3 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onFechar()
       }}
@@ -48,7 +48,7 @@ export function Dialogo({ titulo, onFechar, children, largo = false }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}
-        className={`flex max-h-[90dvh] w-full ${largo ? 'max-w-lg' : 'max-w-md'} flex-col gap-4 overflow-y-auto rounded-md bg-muro p-4 shadow-[6px_6px_0_var(--color-tinta)]`}
+        className={`flex max-h-[90dvh] w-full ${largo ? 'max-w-lg' : 'max-w-md'} flex-col gap-4 overflow-y-auto rounded-md border-2 border-muro-escuro bg-painel p-4 shadow-[6px_6px_0_var(--color-placa)]`}
       >
         <h2 id={idTitulo} className="font-display text-3xl font-black leading-tight">
           {titulo}

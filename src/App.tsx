@@ -113,7 +113,7 @@ export function App() {
       {/* Topo fixo: logo e, depois de iniciar, o cronômetro resumido ao lado. */}
       <header className="sticky top-0 z-40 bg-muro/90 backdrop-blur-sm">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-2">
-          <h1 className="inline-flex shrink-0 -rotate-1 flex-col bg-placa px-2.5 py-1 font-display leading-none text-tinta shadow-[3px_3px_0_var(--color-tinta)] min-[360px]:px-3">
+          <h1 className="inline-flex shrink-0 -rotate-1 flex-col bg-placa px-2.5 py-1 font-display leading-none text-muro shadow-[3px_3px_0_var(--color-placa-escura)] min-[360px]:px-3">
             <span className="text-[0.65rem] font-bold tracking-wide">placar da</span>
             <span className="text-lg font-black uppercase min-[360px]:text-2xl">Quebrada</span>
           </h1>

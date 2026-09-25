@@ -3,12 +3,13 @@
 @import '@fontsource/atkinson-hyperlegible/400.css';
 @import '@fontsource/atkinson-hyperlegible/700.css';
 
-/* Paleta "placa pintada de várzea": muro, tinta, placa amarela; vermelho só para cartão/alerta. */
+/* Tema escuro "placa pintada de várzea": muro (fundo), painel (cartões), tinta (texto claro), placa amarela; vermelho só para cartão/alerta. */
 @theme {
-  --color-muro: #eef1f4;
-  --color-muro-escuro: #c9ced6;
-  --color-tinta: #14213d;
-  --color-tinta-suave: #4a5672;
+  --color-muro: #0c1222;
+  --color-painel: #172036;
+  --color-muro-escuro: #2b3753;
+  --color-tinta: #eef1f4;
+  --color-tinta-suave: #9ba6bd;
   --color-placa: #ffc928;
   --color-placa-escura: #e0a800;
   --color-gramado: #1f7a3a;
@@ -21,7 +22,7 @@
 
 @layer base {
   html {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   body {
@@ -29,7 +30,7 @@
   }
 
   :focus-visible {
-    @apply outline-3 outline-offset-2 outline-tinta;
+    @apply outline-3 outline-offset-2 outline-placa;
   }
 
   @media (prefers-reduced-motion: reduce) {

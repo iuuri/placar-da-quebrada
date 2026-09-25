@@ -48,7 +48,7 @@ function Situacao({ timer, agora }: { timer: EstadoTimer; agora: number }) {
   }
   if (decorridoMs(timer, agora) > 0 && timer.duracaoSeg > 0) {
     return (
-      <span className="text-muro/70">
+      <span className="text-tinta-suave">
         Tempo de jogo: {formatar(timer.duracaoSeg * 1000)}
         {acrescimo > 0 ? ` + ${formatar(acrescimo)} de acréscimo` : ''}
       </span>
@@ -84,7 +84,7 @@ function Acrescimo({ timer, despachar, destaque }: { timer: EstadoTimer; despach
             type="button"
             aria-label={`Dar ${min} minuto${min > 1 ? 's' : ''} de acréscimo`}
             onClick={() => despachar({ tipo: 'acrescimo', segundos: min * 60 })}
-            className="min-h-12 rounded-md bg-white font-display text-2xl font-black text-tinta hover:bg-placa"
+            className="min-h-12 rounded-md bg-tinta font-display text-2xl font-black text-muro hover:bg-placa"
           >
             +{min}'
           </button>
@@ -108,7 +108,7 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
   }
 
   return (
-    <section aria-label="Cronômetro" className="flex flex-col gap-4 rounded-md bg-tinta p-4 text-muro sm:p-5">
+    <section aria-label="Cronômetro" className="flex flex-col gap-4 rounded-md border-2 border-muro-escuro bg-painel p-4 text-tinta sm:p-5">
       {(comecou && !fim) || flutuante ? (
         <div className="-mb-2 flex flex-wrap items-center justify-between gap-2">
           {flutuante ? (
@@ -116,7 +116,7 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
               type="button"
               onClick={flutuante.alternar}
               aria-pressed={flutuante.aberta}
-              className="min-h-10 rounded-md border-2 border-muro/60 px-2.5 text-sm font-bold"
+              className="min-h-10 rounded-md border-2 border-tinta/60 px-2.5 text-sm font-bold"
             >
               {flutuante.aberta ? '📺 Fechar janela flutuante' : '📺 Janela flutuante'}
             </button>
@@ -151,7 +151,7 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
             onClick={() => despachar({ tipo: 'definirModo', modo: m.valor })}
             className={cn(
               'min-h-11 rounded font-bold transition-colors disabled:opacity-50',
-              timer.modo === m.valor ? 'bg-placa text-tinta' : 'text-muro hover:bg-white/10',
+              timer.modo === m.valor ? 'bg-placa text-muro' : 'text-tinta hover:bg-white/10',
             )}
           >
             {m.rotulo}
@@ -177,7 +177,7 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
 
       {podeConfigurar && !comecou ? (
         <fieldset className="flex flex-wrap items-end justify-center gap-2">
-          <legend className="mb-1 w-full text-center text-sm text-muro/80">
+          <legend className="mb-1 w-full text-center text-sm text-tinta-suave">
             {timer.modo === 'regressivo' ? 'Contar a partir de' : 'Tempo de jogo (0 = sem limite)'}
           </legend>
           <label className="flex flex-col items-center text-sm">
@@ -189,7 +189,7 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
               max={999}
               value={minutos}
               onChange={(e) => definirDuracao(e.target.valueAsNumber, segundos)}
-              className="mt-1 h-12 w-24 rounded-md bg-white text-center font-display text-2xl font-bold text-tinta"
+              className="mt-1 h-12 w-24 rounded-md border-2 border-muro-escuro bg-muro text-center font-display text-2xl font-bold text-tinta"
             />
           </label>
           <span className="pb-2 font-display text-3xl font-black">:</span>
@@ -202,7 +202,7 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
               max={59}
               value={segundos}
               onChange={(e) => definirDuracao(minutos, Math.min(59, e.target.valueAsNumber))}
-              className="mt-1 h-12 w-24 rounded-md bg-white text-center font-display text-2xl font-bold text-tinta"
+              className="mt-1 h-12 w-24 rounded-md border-2 border-muro-escuro bg-muro text-center font-display text-2xl font-bold text-tinta"
             />
           </label>
         </fieldset>
@@ -228,7 +228,7 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
         )}
         <Botao
           variante="contorno"
-          className="min-h-16 border-muro bg-transparent text-muro hover:bg-muro hover:text-tinta"
+          className="min-h-16 bg-transparent"
           disabled={timer.rodando || !comecou}
           onClick={() => despachar({ tipo: 'zerarTempo' })}
         >

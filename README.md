@@ -20,6 +20,8 @@ Timer e placar para jogos de futebol de bairro, direto no navegador do celular, 
 - **Súmula**: botão **📄 Súmula** no fim da página abre a tela com placar, contagem por time e registros, e o botão para **compartilhar** (WhatsApp, e-mail…) ou baixar o **PDF protegido contra edição**
 - **Resetar tudo** (no fim da página): zera placar, tempo e anotações (pede confirmação)
 
+Visual em **tema escuro**, com o amarelo da placa como destaque.
+
 Não há login nem banco de dados: tudo fica salvo **só no navegador do aparelho** que está usando.
 
 ## Tecnologia

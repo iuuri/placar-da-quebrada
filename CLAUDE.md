@@ -14,7 +14,7 @@ A versão anterior (campeonatos com Supabase) está arquivada na branch `arquivo
 
 ## Stack
 
-React 19 + TypeScript 6 + Vite 8 · Tailwind CSS 4 · Vitest + Testing Library · oxlint. Não adicionar dependências sem justificar.
+React 19 + TypeScript 6 + Vite 8 · Tailwind CSS 4 · jsPDF (carregado sob demanda, só ao gerar a súmula) · Vitest + Testing Library · oxlint. Não adicionar dependências sem justificar.
 
 ## Estrutura
 
@@ -24,13 +24,13 @@ src/
   estado.ts        # estado, reducer e persistência no localStorage
   tempo.ts         # cálculos do cronômetro (funções puras, testadas)
   components/      # Placar, Cronometro, Anotacoes, ResetarTudo, Botao
-  lib/             # utils (cn), recursos do aparelho (som, vibração, wake lock)
+  lib/             # utils (cn), recursos do aparelho (som, vibração, wake lock), sumula.ts (PDF)
 ```
 
 ## Regras
 
 1. Cronômetro usa timestamps (`iniciadoEm` + `acumuladoMs`); `setInterval` só redesenha a tela.
-2. Mobile-first: botões grandes, funciona em 375px, sem rolagem lateral.
+2. Mobile-first: botões grandes, funciona a partir de 320px, sem rolagem lateral (o grid usa `grid-cols-[minmax(0,1fr)]`).
 3. Textos da interface em português do Brasil.
 4. Ações destrutivas (resetar) sempre com confirmação na própria tela, nunca `window.confirm`.
 5. Não fazer commit/push sem o usuário pedir. Trabalhar em branch `feat/*` ou `fix/*` e abrir PR para a `main` (a `main` é protegida).

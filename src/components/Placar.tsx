@@ -45,8 +45,8 @@ function Time({ lado, nome, gols, faltas, despachar }: TimeProps) {
           + Gol
         </Botao>
       </div>
-      <div className="mt-1 flex w-full items-center justify-between gap-2 rounded-md bg-muro px-2 py-1">
-        <span className="text-sm font-bold">
+      <div className="mt-1 flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-md bg-muro px-1 py-1 min-[360px]:justify-between min-[360px]:px-2">
+        <span className="whitespace-nowrap text-sm font-bold">
           Faltas{' '}
           <output aria-live="polite" aria-label={`Faltas de ${nome}`} className="font-display text-2xl font-black tabular-nums">
             {faltas}
@@ -55,7 +55,7 @@ function Time({ lado, nome, gols, faltas, despachar }: TimeProps) {
         <div className="flex gap-1">
           <Botao
             variante="contorno"
-            className="min-h-10 w-10 px-0 text-xl"
+            className="min-h-10 w-9 px-0 text-xl"
             aria-label={`Tirar uma falta de ${nome}`}
             disabled={faltas === 0}
             onClick={() => despachar({ tipo: 'falta', lado, delta: -1 })}
@@ -64,7 +64,7 @@ function Time({ lado, nome, gols, faltas, despachar }: TimeProps) {
           </Botao>
           <Botao
             variante="contorno"
-            className="min-h-10 w-10 px-0 text-xl"
+            className="min-h-10 w-9 px-0 text-xl"
             aria-label={`Falta de ${nome}`}
             onClick={() => despachar({ tipo: 'falta', lado, delta: 1 })}
           >
@@ -78,8 +78,8 @@ function Time({ lado, nome, gols, faltas, despachar }: TimeProps) {
 
 export function Placar({ placar, despachar }: Props) {
   return (
-    <section aria-label="Placar" className="rounded-md border-2 border-tinta bg-white p-3 shadow-[4px_4px_0_var(--color-tinta)] sm:p-5">
-      <div className="flex items-start gap-2 sm:gap-4">
+    <section aria-label="Placar" className="rounded-md border-2 border-tinta bg-white p-2 shadow-[4px_4px_0_var(--color-tinta)] min-[360px]:p-3 sm:p-5">
+      <div className="flex items-start gap-1 min-[360px]:gap-2 sm:gap-4">
         <Time lado="casa" {...placar.casa} despachar={despachar} />
         <span aria-hidden className="mt-16 font-display text-4xl font-black text-tinta-suave sm:mt-20">
           ×

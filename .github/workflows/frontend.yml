@@ -64,6 +64,7 @@ jobs:
         with:
           name: dist
           path: dist
+      # Endereço principal: placardaquebrada.pages.dev (projeto "placardaquebrada").
       # Cria o projeto Pages na primeira execução; nas seguintes o comando falha por "já existe" e é ignorado.
       - name: Garantir projeto no Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
@@ -72,14 +73,24 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4"
-          command: pages project create placar-da-quebrada --production-branch=main
+          command: pages project create placardaquebrada --production-branch=main
       - id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4"
-          command: pages deploy dist --project-name=placar-da-quebrada --branch=${{ github.head_ref || github.ref_name }} --commit-dirty=true
+          command: pages deploy dist --project-name=placardaquebrada --branch=${{ github.head_ref || github.ref_name }} --commit-dirty=true
+      # Endereço antigo (placar-da-quebrada.pages.dev) continua recebendo a versão da main,
+      # para não quebrar links já compartilhados nem apagar jogos salvos em aparelhos que usam ele.
+      - name: Publicar também no endereço antigo
+        if: github.ref == 'refs/heads/main'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+          command: pages deploy dist --project-name=placar-da-quebrada --branch=main --commit-dirty=true
       - name: Comentar URL de preview no PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7

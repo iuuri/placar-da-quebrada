@@ -2,7 +2,7 @@
 
 Timer e placar para jogos de futebol de bairro, direto no navegador do celular, tablet ou computador.
 
-**No ar:** https://placar-da-quebrada.pages.dev
+**No ar:** https://placardaquebrada.pages.dev (o endereço antigo https://placar-da-quebrada.pages.dev continua funcionando)
 
 ## O que tem
 

@@ -18,6 +18,7 @@ Timer e placar para jogos de futebol de bairro, direto no navegador do celular, 
 - **Registros por time**: toque em 🟨 amarelo, 🟥 vermelho, ⚽ gol, 🔁 troca, ⏱️ punição 2' ou 📝 anotar e escolha o time num pop-up (nome do jogador opcional). O minuto do jogo é registrado sozinho. Cada registro vira um bloco (mais recente primeiro, com rolagem) que pode ser editado (texto e time) ou apagado
 - **Punição de 2 minutos**: cronômetro regressivo por jogador, que anda junto com o tempo de jogo (pausa quando o jogo pausa) e avisa quando o jogador pode voltar
 - **Súmula**: botão **📄 Súmula** no fim da página abre a tela com placar, contagem por time e registros, e o botão para **compartilhar** (WhatsApp, e-mail…) ou baixar o **PDF protegido contra edição**
+- **Instalar como app (PWA)**: botão **📲 Instalar app** no fim da página. No Android/computador abre a instalação do navegador; no iPhone mostra o passo a passo do Safari (Compartilhar → Adicionar à Tela de Início). Instalado, abre em tela cheia com o ícone do Placar e funciona **sem internet**
 - **Resetar tudo** (no fim da página): zera placar, tempo e anotações (pede confirmação)
 
 Visual em **tema escuro**, com o amarelo da placa como destaque.
@@ -26,7 +27,7 @@ Não há login nem banco de dados: tudo fica salvo **só no navegador do aparelh
 
 ## Tecnologia
 
-React 19 + TypeScript + Vite + Tailwind CSS. Hospedado no **Cloudflare Pages**; cada push na `main` publica automaticamente pelo GitHub Actions (`.github/workflows/frontend.yml`).
+React 19 + TypeScript + Vite + Tailwind CSS + vite-plugin-pwa (manifesto e service worker; ícones em `public/icons`). Hospedado no **Cloudflare Pages**; cada push na `main` publica automaticamente pelo GitHub Actions (`.github/workflows/frontend.yml`).
 
 ## Versão anterior (campeonatos)
 

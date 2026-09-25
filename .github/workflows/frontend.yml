@@ -3,10 +3,10 @@ name: Frontend — CI e deploy (Cloudflare Pages)
 on:
   push:
     branches: [main]
-    paths-ignore: ["docs/**", "**.md", "supabase/**"]
+    paths-ignore: ["**.md"]
   pull_request:
     branches: [main]
-    paths-ignore: ["docs/**", "**.md", "supabase/**"]
+    paths-ignore: ["**.md"]
   workflow_dispatch:
 
 concurrency:
@@ -45,9 +45,6 @@ jobs:
       - run: npm run lint
       - run: npm run test -- --run
       - run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/upload-artifact@v4
         with:
           name: dist

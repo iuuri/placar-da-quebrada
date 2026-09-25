@@ -1,32 +1,26 @@
 # ⚽ Placar da Quebrada
 
-Aplicação web para organizar **campeonatos de futebol de bairro**: cadastro de campeonatos, times e jogadores, placar ao vivo com cronômetro, gols, cartões, súmula da partida e tabela de classificação calculada automaticamente.
+Timer e placar para jogos de futebol de bairro, direto no navegador do celular, tablet ou computador.
 
-Inspirada em apps de "Scoreboard", mas com gestão completa do campeonato e visualização pública para a torcida.
+**No ar:** https://placar-da-quebrada.pages.dev
 
-## Quem usa
+## O que tem
 
-| Perfil | Login? | O que faz |
-|---|---|---|
-| **Admin** | Sim | Tudo: cria campeonatos, times, jogadores, partidas e usuários operadores |
-| **Operador** | Sim | Alimenta os jogos: placar, cronômetro, gols, cartões, súmula |
-| **Visitante** | Não | Só visualiza: jogos ao vivo, resultados, tabela, artilharia, cartões |
+- **Cronômetro progressivo ou regressivo**, com tempo configurável (minutos e segundos)
+  - Progressivo: mostra o acréscimo quando passa do tempo de jogo
+  - Regressivo: para sozinho no zero, apita e vibra
+  - Continua certo se a tela apagar ou a página recarregar
+  - Mantém a tela acesa enquanto o tempo corre (quando o aparelho permite)
+- **Placar** com o nome dos dois times e botões de gol (+1 / −1)
+- **Anotações** livres, com atalhos que registram o minuto do jogo: 🟨 amarelo, 🟥 vermelho, ⚽ gol, 🔁 troca
+- **Resetar tudo**: zera placar, tempo e anotações (pede confirmação)
 
-## Stack (100% nuvem e gratuita)
+Não há login nem banco de dados: tudo fica salvo **só no navegador do aparelho** que está usando.
 
-| Camada | Serviço | Plano |
-|---|---|---|
-| Frontend (React + Vite + TypeScript + Tailwind) | **Cloudflare Pages** | Free |
-| Backend (Auth, API, Realtime, Edge Functions) | **Supabase** | Free |
-| Banco de dados (PostgreSQL + RLS) | **Supabase** | Free |
-| Código + CI/CD | **GitHub + GitHub Actions** | Free |
+## Tecnologia
 
-Nada roda em máquina local: o código vive no GitHub, o build e o deploy rodam no GitHub Actions, o site fica no Cloudflare e os dados no Supabase.
+React 19 + TypeScript + Vite + Tailwind CSS. Hospedado no **Cloudflare Pages**; cada push na `main` publica automaticamente pelo GitHub Actions (`.github/workflows/frontend.yml`).
 
-## Documentação
+## Versão anterior (campeonatos)
 
-Comece por [docs/README.md](docs/README.md). Para conectar GitHub, Supabase e Cloudflare, veja [docs/connections.md](docs/connections.md). Instruções para o Claude Code estão em [CLAUDE.md](CLAUDE.md).
-
-## Status
-
-📝 Fase de planejamento — documentação e pipeline prontos, código ainda não iniciado. Veja o [roadmap](docs/roadmap.md).
+O app completo de campeonatos (login, times, jogadores, Supabase) está arquivado na branch [`arquivo/v1-campeonatos`](https://github.com/iuuri/placar-da-quebrada/tree/arquivo/v1-campeonatos) e na tag `v1-campeonatos`, com toda a documentação em `docs/`.

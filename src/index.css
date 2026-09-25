@@ -3,7 +3,7 @@
 @import '@fontsource/atkinson-hyperlegible/400.css';
 @import '@fontsource/atkinson-hyperlegible/700.css';
 
-/* Paleta "placa pintada de várzea" — ver docs/architecture.md#identidade-visual */
+/* Paleta "placa pintada de várzea": muro, tinta, placa amarela; vermelho só para cartão/alerta. */
 @theme {
   --color-muro: #eef1f4;
   --color-muro-escuro: #c9ced6;
@@ -39,4 +39,16 @@
       transition-duration: 0.01ms !important;
     }
   }
+}
+
+/* Alarme do fim do tempo regressivo */
+@keyframes piscar {
+  50% {
+    background-color: var(--color-cartao);
+    color: white;
+  }
+}
+
+.alarme {
+  animation: piscar 0.8s steps(1) infinite;
 }

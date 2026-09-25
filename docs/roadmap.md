@@ -24,7 +24,7 @@ Cada fase termina **publicada** em `placar-da-quebrada.pages.dev`. Uma fase = um
 - [x] 2.2 Tela: criar/editar/apagar campeonato
 - [x] 2.3 Tela: times e jogadores
 - [x] 2.4 Edge Function `admin-users` + tela de operadores (criar, trocar senha, ativar/desativar, mudar papel)
-- [ ] 2.5 Páginas públicas do campeonato e do time
+- [x] 2.5 Páginas públicas: início com campeonatos, página do campeonato (times) e do time (elenco)
 - [ ] CRUD campeonato com regras
 - [ ] CRUD times e jogadores
 - [ ] Edge Function `admin-users` + tela de operadores

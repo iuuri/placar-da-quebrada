@@ -27,6 +27,14 @@ export const router = createBrowserRouter([
     errorElement: <ErroRota />,
     children: [
       { index: true, element: <HomePage /> },
+      {
+        path: 'c/:slug',
+        element: sobDemanda(() => import('@/features/publico/pages/CampeonatoPublicoPage'), 'CampeonatoPublicoPage'),
+      },
+      {
+        path: 'c/:slug/time/:timeId',
+        element: sobDemanda(() => import('@/features/publico/pages/TimePublicoPage'), 'TimePublicoPage'),
+      },
       { path: 'login', element: sobDemanda(() => import('@/features/auth/pages/LoginPage'), 'LoginPage') },
       {
         path: 'esqueci-senha',

@@ -7,7 +7,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import type { Time } from '@/types/database.types'
 import { gerarSigla, timeSchema, type TimeFormInput, type TimeFormValues } from '../schemas'
-import { EscudoSigla } from './EscudoSigla'
+import { EscudoSigla } from '@/components/EscudoSigla'
 
 type Props = {
   time?: Time

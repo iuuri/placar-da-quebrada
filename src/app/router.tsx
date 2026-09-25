@@ -6,6 +6,7 @@ import { RequireRole } from '@/features/auth/RequireRole'
 import { HomePage } from '@/features/home/pages/HomePage'
 import { PublicLayout } from './layouts/PublicLayout'
 import { Carregando } from './pages/Carregando'
+import { ErroRota } from './pages/ErroRota'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 // Telas de login e painel carregam sob demanda: o visitante só baixa a área pública.
@@ -23,6 +24,7 @@ const PainelLayout = () => import('./layouts/PainelLayout')
 export const router = createBrowserRouter([
   {
     element: <PublicLayout />,
+    errorElement: <ErroRota />,
     children: [
       { index: true, element: <HomePage /> },
       { path: 'login', element: sobDemanda(() => import('@/features/auth/pages/LoginPage'), 'LoginPage') },
@@ -39,6 +41,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <RequireRole>{sobDemanda(PainelLayout, 'PainelLayout')}</RequireRole>,
+    errorElement: <ErroRota />,
     children: [
       { path: 'painel', element: sobDemanda(() => import('@/features/painel/pages/PainelPage'), 'PainelPage') },
       {

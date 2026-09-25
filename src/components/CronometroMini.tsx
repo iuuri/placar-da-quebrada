@@ -10,41 +10,42 @@ type Props = {
   onAbrir: () => void
 }
 
-// Cronômetro resumido: barra flutuante e um pouco transparente no rodapé da tela,
-// para liberar espaço para o placar e as anotações enquanto o jogo corre.
+// Cronômetro resumido: fica no topo, ao lado da logo, depois que o jogo começa.
+// Libera a tela para o placar e as anotações e continua visível ao rolar a página.
 export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
   const alem = alemDoTempoMs(timer, agora)
   const detalhe =
     timer.modo === 'regressivo'
       ? timer.acrescimoSeg > 0
-        ? `Acréscimo +${Math.round(timer.acrescimoSeg / 60)}'`
+        ? `+${Math.round(timer.acrescimoSeg / 60)}' acrésc.`
         : 'Regressivo'
       : alem > 0
-        ? `Acréscimo +${formatar(alem)}`
+        ? `+${formatar(alem)} acrésc.`
         : 'Progressivo'
 
   return (
     <section
       aria-label="Cronômetro resumido"
-      className={cn(
-        'fixed inset-x-3 bottom-3 z-40 mx-auto flex max-w-lg items-center gap-3 rounded-xl px-3 py-2 text-muro',
-        'bg-tinta/80 shadow-[0_6px_24px_rgb(20_33_61/0.35)] backdrop-blur-sm transition-opacity',
-        'opacity-90 hover:opacity-100 focus-within:opacity-100',
-      )}
+      className="flex min-w-0 items-center gap-1.5 rounded-lg bg-tinta/85 py-1 pr-1 pl-2.5 text-muro shadow-[0_4px_14px_rgb(20_33_61/0.25)] min-[360px]:gap-2"
     >
-      <div role="timer" aria-label="Tempo" className="min-w-0 flex-1">
-        <p className="font-display text-4xl font-black leading-none tabular-nums">
+      <div role="timer" aria-label="Tempo" className="shrink-0">
+        <p className="font-display text-3xl font-black leading-none tabular-nums">
           {formatar(exibidoMs(timer, agora), timer.modo === 'regressivo')}
         </p>
-        <p className={cn('truncate text-xs font-bold', alem > 0 || timer.acrescimoSeg > 0 ? 'text-placa' : 'text-muro/70')}>
-          {timer.rodando ? detalhe : `Pausado · ${detalhe}`}
+        <p
+          className={cn(
+            'max-w-[5rem] truncate text-[0.65rem] font-bold leading-tight',
+            alem > 0 || timer.acrescimoSeg > 0 ? 'text-placa' : 'text-muro/70',
+          )}
+        >
+          {timer.rodando ? detalhe : 'Pausado'}
         </p>
       </div>
       {timer.rodando ? (
         <button
           type="button"
           onClick={() => despachar({ tipo: 'pausar', agora: Date.now() })}
-          className="min-h-11 rounded-md bg-placa px-4 font-bold text-tinta"
+          className="min-h-10 shrink-0 rounded-md bg-placa px-2 text-sm font-bold text-tinta min-[360px]:px-3"
         >
           Pausar
         </button>
@@ -55,7 +56,7 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
             prepararSom()
             despachar({ tipo: 'iniciar', agora: Date.now() })
           }}
-          className="min-h-11 rounded-md bg-placa px-4 font-bold text-tinta"
+          className="min-h-10 shrink-0 rounded-md bg-placa px-2 text-sm font-bold text-tinta min-[360px]:px-3"
         >
           Continuar
         </button>
@@ -64,9 +65,10 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
         type="button"
         onClick={onAbrir}
         aria-label="Abrir cronômetro completo"
-        className="min-h-11 rounded-md border-2 border-muro/60 px-3 text-sm font-bold"
+        title="Abrir cronômetro completo"
+        className="min-h-10 min-w-9 shrink-0 rounded-md border-2 border-muro/50 text-lg font-bold leading-none"
       >
-        Abrir
+        ▾
       </button>
     </section>
   )

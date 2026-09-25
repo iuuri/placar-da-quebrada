@@ -7,6 +7,7 @@ import { Punicoes } from './components/Punicoes'
 import { ResetarTudo } from './components/ResetarTudo'
 import { BotaoSumula } from './components/Sumula'
 import { useEstado } from './estado'
+import { abrirFlutuante, suportaFlutuante } from './lib/flutuante'
 import { apitar, manterTelaAcesa } from './lib/recursos'
 import { acabou, acabouAcrescimo, decorridoMs, minutoDeJogo, restantePunicaoMs } from './tempo'
 
@@ -27,6 +28,37 @@ export function App() {
   const [estado, despachar] = useEstado()
   const { timer } = estado
   const agora = useAgora(timer.rodando)
+
+  // Janela flutuante: lê sempre o estado mais recente (atualizado a cada render).
+  const estadoAtual = useRef(estado)
+  useEffect(() => {
+    estadoAtual.current = estado
+  }, [estado])
+  const [flutuanteAberta, setFlutuanteAberta] = useState(false)
+  const [erroFlutuante, setErroFlutuante] = useState<string | null>(null)
+  const fecharFlutuante = useRef<(() => void) | null>(null)
+  async function alternarFlutuante() {
+    setErroFlutuante(null)
+    if (fecharFlutuante.current) {
+      fecharFlutuante.current()
+      return
+    }
+    try {
+      fecharFlutuante.current = await abrirFlutuante(
+        () => estadoAtual.current,
+        () => {
+          fecharFlutuante.current = null
+          setFlutuanteAberta(false)
+        },
+      )
+      setFlutuanteAberta(true)
+    } catch {
+      setErroFlutuante('Este navegador não abriu a janela flutuante.')
+    }
+  }
+  const flutuante = suportaFlutuante()
+    ? { aberta: flutuanteAberta, alternar: () => void alternarFlutuante(), erro: erroFlutuante }
+    : undefined
   const fim = acabou(timer, agora)
   const comecou = timer.rodando || decorridoMs(timer, agora) > 0
   // Depois de iniciar, o cronômetro vira uma barra pequena no rodapé; abre de novo no fim do tempo.
@@ -95,7 +127,13 @@ export function App() {
         <div className="flex flex-col gap-5">
           <Placar placar={estado.placar} despachar={despachar} />
           {cronometroCompleto ? (
-            <Cronometro timer={timer} agora={agora} despachar={despachar} onRecolher={() => setCronometroAberto(false)} />
+            <Cronometro
+              timer={timer}
+              agora={agora}
+              despachar={despachar}
+              onRecolher={() => setCronometroAberto(false)}
+              flutuante={flutuante}
+            />
           ) : null}
           <Punicoes punicoes={estado.punicoes} placar={estado.placar} timer={timer} agora={agora} despachar={despachar} />
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react'
-import { iniciar, pausar, zerar, type EstadoTimer, type Modo } from './tempo'
+import { ajustarAcrescimo, iniciar, pausar, zerar, type EstadoTimer, type Modo } from './tempo'
 
 // Tudo fica só neste aparelho (localStorage). Não há banco de dados.
 
@@ -16,13 +16,13 @@ export type Nota = {
 
 export type Estado = {
   timer: EstadoTimer
-  placar: Record<Lado, { nome: string; gols: number }>
+  placar: Record<Lado, { nome: string; gols: number; faltas: number }>
   notas: Nota[] // mais recente primeiro
 }
 
 export const ESTADO_INICIAL: Estado = {
-  timer: { modo: 'progressivo', duracaoSeg: 25 * 60, rodando: false, iniciadoEm: null, acumuladoMs: 0 },
-  placar: { casa: { nome: 'Time A', gols: 0 }, visitante: { nome: 'Time B', gols: 0 } },
+  timer: { modo: 'regressivo', duracaoSeg: 25 * 60, acrescimoSeg: 0, rodando: false, iniciadoEm: null, acumuladoMs: 0 },
+  placar: { casa: { nome: 'Time A', gols: 0, faltas: 0 }, visitante: { nome: 'Time B', gols: 0, faltas: 0 } },
   notas: [],
 }
 
@@ -34,8 +34,10 @@ export type Acao =
   | { tipo: 'zerarTempo' }
   | { tipo: 'definirModo'; modo: Modo }
   | { tipo: 'definirDuracao'; segundos: number }
+  | { tipo: 'acrescimo'; segundos: number }
   | { tipo: 'nomeTime'; lado: Lado; nome: string }
   | { tipo: 'gol'; lado: Lado; delta: 1 | -1 }
+  | { tipo: 'falta'; lado: Lado; delta: 1 | -1 }
   | { tipo: 'adicionarNota'; nota: Nota }
   | { tipo: 'editarNota'; id: string; texto: string }
   | { tipo: 'removerNota'; id: string }
@@ -58,6 +60,8 @@ export function reducer(estado: Estado, acao: Acao): Estado {
       const segundos = Math.min(Math.max(0, Math.round(acao.segundos)), 999 * 60)
       return { ...estado, timer: { ...estado.timer, duracaoSeg: segundos } }
     }
+    case 'acrescimo':
+      return { ...estado, timer: ajustarAcrescimo(estado.timer, acao.segundos) }
     case 'nomeTime':
       return {
         ...estado,
@@ -68,6 +72,13 @@ export function reducer(estado: Estado, acao: Acao): Estado {
       return {
         ...estado,
         placar: { ...estado.placar, [acao.lado]: { ...atual, gols: Math.max(0, Math.min(99, atual.gols + acao.delta)) } },
+      }
+    }
+    case 'falta': {
+      const atual = estado.placar[acao.lado]
+      return {
+        ...estado,
+        placar: { ...estado.placar, [acao.lado]: { ...atual, faltas: Math.max(0, Math.min(99, atual.faltas + acao.delta)) } },
       }
     }
     case 'adicionarNota': {

@@ -1,7 +1,19 @@
 import { converterTextoAntigo, ESTADO_INICIAL, reducer } from './estado'
-import { acabou, acrescimoMs, exibidoMs, formatar, iniciar, minutoDeJogo, pausar, type EstadoTimer } from './tempo'
+import {
+  acabou,
+  acabouAcrescimo,
+  ajustarAcrescimo,
+  alemDoTempoMs,
+  exibidoMs,
+  formatar,
+  iniciar,
+  minutoDeJogo,
+  pausar,
+  zerar,
+  type EstadoTimer,
+} from './tempo'
 
-const base: EstadoTimer = { modo: 'progressivo', duracaoSeg: 60, rodando: false, iniciadoEm: null, acumuladoMs: 0 }
+const base: EstadoTimer = { modo: 'progressivo', duracaoSeg: 60, acrescimoSeg: 0, rodando: false, iniciadoEm: null, acumuladoMs: 0 }
 
 describe('formatar', () => {
   it('mostra mm:ss e passa de 99 minutos', () => {
@@ -41,10 +53,31 @@ describe('cronômetro por timestamps', () => {
     expect(iniciar(t, 0)).toBe(t)
   })
 
-  it('progressivo mostra acréscimo depois do tempo de jogo', () => {
+  it('progressivo mostra quanto passou do tempo de jogo', () => {
     const t = iniciar(base, 0)
-    expect(acrescimoMs(t, 30_000)).toBe(0)
-    expect(acrescimoMs(t, 72_000)).toBe(12_000)
+    expect(alemDoTempoMs(t, 30_000)).toBe(0)
+    expect(alemDoTempoMs(t, 72_000)).toBe(12_000)
+  })
+
+  it('acréscimo no regressivo: estende a contagem, inclusive depois de acabar', () => {
+    let t = pausar(iniciar({ ...base, modo: 'regressivo' }, 0), 70_000) // acabou em 60 s
+    expect(acabou(t, 70_000)).toBe(true)
+    t = ajustarAcrescimo(t, 120)
+    expect(acabou(t, 70_000)).toBe(false)
+    expect(exibidoMs(t, 70_000)).toBe(120_000)
+    t = iniciar(t, 100_000)
+    expect(exibidoMs(t, 160_000)).toBe(60_000)
+  })
+
+  it('acréscimo no progressivo avisa quando termina, sem parar', () => {
+    const t = iniciar(ajustarAcrescimo(base, 180), 0)
+    expect(acabouAcrescimo(t, 200_000)).toBe(false)
+    expect(acabouAcrescimo(t, 240_000)).toBe(true)
+  })
+
+  it('acréscimo nunca fica negativo e zerar o tempo tira o acréscimo', () => {
+    expect(ajustarAcrescimo(base, -60).acrescimoSeg).toBe(0)
+    expect(zerar(ajustarAcrescimo(base, 60)).acrescimoSeg).toBe(0)
   })
 
   it('minuto de jogo no estilo do futebol', () => {
@@ -69,6 +102,15 @@ describe('reducer', () => {
     e = reducer(e, { tipo: 'pausar', agora: 5_000 })
     e = reducer(e, { tipo: 'definirModo', modo: 'regressivo' })
     expect(e.timer).toMatchObject({ modo: 'regressivo', acumuladoMs: 0 })
+  })
+
+  it('começa no regressivo e conta faltas sem ficar negativo', () => {
+    expect(ESTADO_INICIAL.timer.modo).toBe('regressivo')
+    let e = reducer(ESTADO_INICIAL, { tipo: 'falta', lado: 'visitante', delta: 1 })
+    e = reducer(e, { tipo: 'falta', lado: 'visitante', delta: 1 })
+    e = reducer(e, { tipo: 'falta', lado: 'casa', delta: -1 })
+    expect(e.placar.visitante.faltas).toBe(2)
+    expect(e.placar.casa.faltas).toBe(0)
   })
 
   it('resetar tudo volta ao estado inicial', () => {

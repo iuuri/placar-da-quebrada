@@ -5,17 +5,28 @@ import { iniciar, pausar, zerar, type EstadoTimer, type Modo } from './tempo'
 
 export type Lado = 'casa' | 'visitante'
 
+export type TipoNota = 'amarelo' | 'vermelho' | 'gol' | 'troca' | 'nota'
+
+export type Nota = {
+  id: string
+  tipo: TipoNota
+  minuto: number
+  texto: string
+}
+
 export type Estado = {
   timer: EstadoTimer
   placar: Record<Lado, { nome: string; gols: number }>
-  anotacoes: string
+  notas: Nota[] // mais recente primeiro
 }
 
 export const ESTADO_INICIAL: Estado = {
   timer: { modo: 'progressivo', duracaoSeg: 25 * 60, rodando: false, iniciadoEm: null, acumuladoMs: 0 },
   placar: { casa: { nome: 'Time A', gols: 0 }, visitante: { nome: 'Time B', gols: 0 } },
-  anotacoes: '',
+  notas: [],
 }
+
+export const MAX_TEXTO_NOTA = 140
 
 export type Acao =
   | { tipo: 'iniciar'; agora: number }
@@ -25,7 +36,9 @@ export type Acao =
   | { tipo: 'definirDuracao'; segundos: number }
   | { tipo: 'nomeTime'; lado: Lado; nome: string }
   | { tipo: 'gol'; lado: Lado; delta: 1 | -1 }
-  | { tipo: 'anotacoes'; texto: string }
+  | { tipo: 'adicionarNota'; nota: Nota }
+  | { tipo: 'editarNota'; id: string; texto: string }
+  | { tipo: 'removerNota'; id: string }
   | { tipo: 'resetarTudo' }
 
 export function reducer(estado: Estado, acao: Acao): Estado {
@@ -57,11 +70,43 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         placar: { ...estado.placar, [acao.lado]: { ...atual, gols: Math.max(0, Math.min(99, atual.gols + acao.delta)) } },
       }
     }
-    case 'anotacoes':
-      return { ...estado, anotacoes: acao.texto }
+    case 'adicionarNota': {
+      const nota = { ...acao.nota, texto: acao.nota.texto.trim().slice(0, MAX_TEXTO_NOTA) }
+      return { ...estado, notas: [nota, ...estado.notas] }
+    }
+    case 'editarNota':
+      return {
+        ...estado,
+        notas: estado.notas.map((n) =>
+          n.id === acao.id ? { ...n, texto: acao.texto.trim().slice(0, MAX_TEXTO_NOTA) } : n,
+        ),
+      }
+    case 'removerNota':
+      return { ...estado, notas: estado.notas.filter((n) => n.id !== acao.id) }
     case 'resetarTudo':
       return ESTADO_INICIAL
   }
+}
+
+const EMOJI_PARA_TIPO: Record<string, TipoNota> = { '🟨': 'amarelo', '🟥': 'vermelho', '⚽': 'gol', '🔁': 'troca' }
+
+// Versão anterior guardava as anotações num texto livre ("12' 🟨 Zé" por linha).
+// Converte cada linha num bloco, do mais recente para o mais antigo.
+export function converterTextoAntigo(texto: string): Nota[] {
+  return texto
+    .split('\n')
+    .map((linha) => linha.trim())
+    .filter(Boolean)
+    .map((linha, i) => {
+      const m = /^(\d{1,3})'\s*(🟨|🟥|⚽|🔁)?\s*(.*)$/u.exec(linha)
+      return {
+        id: `antiga-${i}`,
+        minuto: m ? Number(m[1]) : 0,
+        tipo: (m?.[2] && EMOJI_PARA_TIPO[m[2]]) || 'nota',
+        texto: (m ? m[3] : linha).slice(0, MAX_TEXTO_NOTA),
+      }
+    })
+    .reverse()
 }
 
 const CHAVE = 'placar-da-quebrada:v1'
@@ -70,7 +115,7 @@ export function carregar(): Estado {
   try {
     const bruto = localStorage.getItem(CHAVE)
     if (!bruto) return ESTADO_INICIAL
-    const salvo = JSON.parse(bruto) as Partial<Estado>
+    const salvo = JSON.parse(bruto) as Partial<Estado> & { anotacoes?: unknown }
     // Mescla com o inicial para aguentar versões antigas do que foi salvo.
     return {
       timer: { ...ESTADO_INICIAL.timer, ...salvo.timer },
@@ -78,7 +123,11 @@ export function carregar(): Estado {
         casa: { ...ESTADO_INICIAL.placar.casa, ...salvo.placar?.casa },
         visitante: { ...ESTADO_INICIAL.placar.visitante, ...salvo.placar?.visitante },
       },
-      anotacoes: typeof salvo.anotacoes === 'string' ? salvo.anotacoes : '',
+      notas: Array.isArray(salvo.notas)
+        ? salvo.notas
+        : typeof salvo.anotacoes === 'string'
+          ? converterTextoAntigo(salvo.anotacoes)
+          : [],
     }
   } catch {
     return ESTADO_INICIAL

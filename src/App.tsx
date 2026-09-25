@@ -60,7 +60,7 @@ export function App() {
           <Placar placar={estado.placar} despachar={despachar} />
           <Cronometro timer={timer} agora={agora} despachar={despachar} />
         </div>
-        <Anotacoes texto={estado.anotacoes} minuto={minutoDeJogo(timer, agora)} despachar={despachar} />
+        <Anotacoes notas={estado.notas} minuto={minutoDeJogo(timer, agora)} despachar={despachar} />
       </main>
 
       <footer className="px-4 pb-4 text-center text-xs text-tinta-suave">

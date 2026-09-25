@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils'
 type Variante = 'placa' | 'contorno' | 'perigo' | 'texto'
 
 const VARIANTES: Record<Variante, string> = {
-  placa: 'bg-placa text-tinta shadow-[0_3px_0_var(--color-placa-escura)] hover:bg-placa-escura active:translate-y-px active:shadow-none',
-  contorno: 'border-2 border-tinta bg-white text-tinta hover:bg-tinta hover:text-muro',
+  placa: 'bg-placa text-muro shadow-[0_3px_0_var(--color-placa-escura)] hover:bg-placa-escura active:translate-y-px active:shadow-none',
+  contorno: 'border-2 border-tinta bg-painel text-tinta hover:bg-tinta hover:text-muro',
   perigo: 'bg-cartao text-white hover:bg-cartao/90',
   texto: 'text-tinta underline-offset-4 hover:underline',
 }

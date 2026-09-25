@@ -26,7 +26,7 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
   return (
     <section
       aria-label="Cronômetro resumido"
-      className="flex min-w-0 items-center gap-1.5 rounded-lg bg-tinta/85 py-1 pr-1 pl-2.5 text-muro shadow-[0_4px_14px_rgb(20_33_61/0.25)] min-[360px]:gap-2"
+      className="flex min-w-0 items-center gap-1.5 rounded-lg border border-muro-escuro bg-painel/95 py-1 pr-1 pl-2.5 text-tinta shadow-[0_4px_14px_rgb(0_0_0/0.5)] min-[360px]:gap-2"
     >
       <div role="timer" aria-label="Tempo" className="shrink-0">
         <p className="font-display text-3xl font-black leading-none tabular-nums">
@@ -35,7 +35,7 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
         <p
           className={cn(
             'max-w-[5rem] truncate text-[0.65rem] font-bold leading-tight',
-            alem > 0 || timer.acrescimoSeg > 0 ? 'text-placa' : 'text-muro/70',
+            alem > 0 || timer.acrescimoSeg > 0 ? 'text-placa' : 'text-tinta-suave',
           )}
         >
           {timer.rodando ? detalhe : 'Pausado'}
@@ -45,7 +45,7 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
         <button
           type="button"
           onClick={() => despachar({ tipo: 'pausar', agora: Date.now() })}
-          className="min-h-10 shrink-0 rounded-md bg-placa px-2 text-sm font-bold text-tinta min-[360px]:px-3"
+          className="min-h-10 shrink-0 rounded-md bg-placa px-2 text-sm font-bold text-muro min-[360px]:px-3"
         >
           Pausar
         </button>
@@ -56,7 +56,7 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
             prepararSom()
             despachar({ tipo: 'iniciar', agora: Date.now() })
           }}
-          className="min-h-10 shrink-0 rounded-md bg-placa px-2 text-sm font-bold text-tinta min-[360px]:px-3"
+          className="min-h-10 shrink-0 rounded-md bg-placa px-2 text-sm font-bold text-muro min-[360px]:px-3"
         >
           Continuar
         </button>
@@ -66,7 +66,7 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
         onClick={onAbrir}
         aria-label="Abrir cronômetro completo"
         title="Abrir cronômetro completo"
-        className="min-h-10 min-w-9 shrink-0 rounded-md border-2 border-muro/50 text-lg font-bold leading-none"
+        className="min-h-10 min-w-9 shrink-0 rounded-md border-2 border-tinta/50 text-lg font-bold leading-none"
       >
         ▾
       </button>

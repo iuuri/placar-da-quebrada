@@ -18,7 +18,7 @@ function Time({ lado, nome, gols, faltas, despachar }: TimeProps) {
         onChange={(e) => despachar({ tipo: 'nomeTime', lado, nome: e.target.value })}
         onFocus={(e) => e.target.select()}
         maxLength={30}
-        className="w-full rounded-md border-2 border-transparent bg-transparent px-1 text-center font-display text-2xl font-bold leading-tight hover:border-muro-escuro focus-visible:border-tinta focus-visible:bg-white focus-visible:outline-none sm:text-3xl"
+        className="w-full rounded-md border-2 border-transparent bg-transparent px-1 text-center font-display text-2xl font-bold leading-tight hover:border-muro-escuro focus-visible:border-tinta focus-visible:bg-muro focus-visible:outline-none sm:text-3xl"
       />
       <output
         aria-live="polite"
@@ -78,7 +78,7 @@ function Time({ lado, nome, gols, faltas, despachar }: TimeProps) {
 
 export function Placar({ placar, despachar }: Props) {
   return (
-    <section aria-label="Placar" className="rounded-md border-2 border-tinta bg-white p-2 shadow-[4px_4px_0_var(--color-tinta)] min-[360px]:p-3 sm:p-5">
+    <section aria-label="Placar" className="rounded-md border-2 border-muro-escuro bg-painel p-2 shadow-[4px_4px_0_var(--color-placa)] min-[360px]:p-3 sm:p-5">
       <div className="flex items-start gap-1 min-[360px]:gap-2 sm:gap-4">
         <Time lado="casa" {...placar.casa} despachar={despachar} />
         <span aria-hidden className="mt-16 font-display text-4xl font-black text-tinta-suave sm:mt-20">

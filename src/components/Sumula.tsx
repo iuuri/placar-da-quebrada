@@ -102,7 +102,7 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
         {registros.length === 0 ? (
           <p className="text-sm text-tinta-suave">Nenhum registro ainda.</p>
         ) : (
-          <ol className="flex max-h-48 flex-col divide-y divide-muro-escuro overflow-y-auto rounded-md bg-white px-2 text-sm">
+          <ol className="flex max-h-48 flex-col divide-y divide-muro-escuro overflow-y-auto rounded-md bg-muro px-2 text-sm">
             {registros.map((n) => (
               <li key={n.id} className="flex gap-2 py-1.5">
                 <span className="w-8 shrink-0 font-bold tabular-nums">{n.minuto}'</span>
@@ -122,7 +122,7 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
       </Botao>
       <p className="-mt-2 text-center text-xs text-tinta-suave">PDF protegido contra edição, pronto para o WhatsApp.</p>
       {status ? (
-        <p role="status" className={status.tipo === 'erro' ? 'font-bold text-cartao' : 'font-bold text-gramado'}>
+        <p role="status" className={status.tipo === 'erro' ? 'font-bold text-cartao' : 'font-bold text-placa'}>
           {status.texto}
         </p>
       ) : null}

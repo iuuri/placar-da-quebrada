@@ -16,7 +16,7 @@ export function Punicoes({ punicoes, placar, timer, agora, despachar }: Props) {
   if (punicoes.length === 0) return null
 
   return (
-    <section aria-labelledby="titulo-punicoes" className="flex flex-col gap-2 rounded-md border-2 border-laranja bg-white p-3">
+    <section aria-labelledby="titulo-punicoes" className="flex flex-col gap-2 rounded-md border-2 border-laranja bg-painel p-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="titulo-punicoes" className="font-display text-2xl font-bold">
           ⏱️ Punições

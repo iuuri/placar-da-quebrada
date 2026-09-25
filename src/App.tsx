@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Anotacoes } from './components/Anotacoes'
 import { Cronometro } from './components/Cronometro'
+import { InstalarApp } from './components/InstalarApp'
 import { CronometroMini } from './components/CronometroMini'
 import { Placar } from './components/Placar'
 import { Punicoes } from './components/Punicoes'
@@ -160,6 +161,7 @@ export function App() {
               }}
             />
           </div>
+          <InstalarApp />
           <p className="text-center text-xs text-tinta-suave">
             Os dados ficam salvos só neste aparelho. “Resetar tudo” apaga placar, tempo e anotações.
           </p>

@@ -15,7 +15,7 @@ A versão anterior (campeonatos com Supabase) está arquivada na branch `arquivo
 
 ## Stack
 
-React 19 + TypeScript 6 + Vite 8 · Tailwind CSS 4 · jsPDF (carregado sob demanda, só ao gerar a súmula) · Vitest + Testing Library · oxlint. Não adicionar dependências sem justificar.
+React 19 + TypeScript 6 + Vite 8 · Tailwind CSS 4 · vite-plugin-pwa (PWA: manifesto + service worker com autoUpdate, configurado no `vite.config.ts`) · jsPDF (carregado sob demanda, só ao gerar a súmula) · Vitest + Testing Library · oxlint. Não adicionar dependências sem justificar.
 
 ## Estrutura
 
@@ -24,8 +24,8 @@ src/
   App.tsx          # tela única e efeitos (alarme, tela acesa)
   estado.ts        # estado, reducer e persistência no localStorage
   tempo.ts         # cálculos do cronômetro (funções puras, testadas)
-  components/      # Placar, Cronometro, Anotacoes, ResetarTudo, Botao
-  lib/             # utils (cn), recursos do aparelho (som, vibração, wake lock), sumula.ts (PDF)
+  components/      # Placar, Cronometro(Mini), Anotacoes, Punicoes, Sumula, InstalarApp, Dialogo, ResetarTudo, Botao
+  lib/             # utils (cn), recursos do aparelho (som, vibração, wake lock), sumula.ts (PDF), flutuante.ts (janela flutuante), instalar.ts (PWA)
 ```
 
 ## Regras
@@ -35,6 +35,8 @@ src/
 3. Textos da interface em português do Brasil.
 4. Ações destrutivas (resetar) sempre com confirmação na própria tela, nunca `window.confirm`.
 5. Não fazer commit/push sem o usuário pedir. Trabalhar em branch `feat/*` ou `fix/*` e abrir PR para a `main` (a `main` é protegida).
+
+6. O service worker só existe na build: para testar PWA/offline use `npm run build && npm run preview` (config `preview` no launch.json). Ícones gerados a partir de `public/favicon.svg`.
 
 ## Antes de concluir
 

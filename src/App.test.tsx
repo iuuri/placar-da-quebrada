@@ -58,58 +58,107 @@ describe('App', () => {
     expect(screen.getByLabelText('Faltas de Time A')).toHaveTextContent('0')
   })
 
-  it('marca gols, anota com o minuto e reseta tudo com confirmação', () => {
+  // Toca no tipo, escreve (opcional) no pop-up e escolhe o time.
+  function registrar(tipo: RegExp, time: string, texto = '') {
+    fireEvent.click(screen.getByRole('button', { name: tipo }))
+    const dialogo = screen.getByRole('dialog')
+    if (texto) fireEvent.change(within(dialogo).getByRole('textbox'), { target: { value: texto } })
+    fireEvent.click(within(dialogo).getByRole('button', { name: time }))
+  }
+
+  function blocos() {
+    return within(screen.getByRole('list', { name: /Anotações/ })).getAllByRole('listitem')
+  }
+
+  it('registro abre pop-up para escolher o time, com minuto e nome opcional', () => {
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('Nome do primeiro time'), { target: { value: 'Unidos' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
+    act(() => vi.advanceTimersByTime(12 * 60_000 + 5_000))
+
+    fireEvent.click(screen.getByRole('button', { name: /Amarelo/ }))
+    const dialogo = screen.getByRole('dialog', { name: /Amarelo aos 13'/ })
+    expect(within(dialogo).getByRole('button', { name: 'Unidos' })).toHaveFocus()
+    fireEvent.change(within(dialogo).getByRole('textbox'), { target: { value: 'Zé' } })
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Unidos' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(blocos()[0]).toHaveTextContent("13'")
+    expect(blocos()[0]).toHaveTextContent('Amarelo')
+    expect(blocos()[0]).toHaveTextContent('Unidos')
+    expect(blocos()[0]).toHaveTextContent('Zé')
+
+    // sem nome também vale
+    registrar(/Vermelho/, 'Time B')
+    expect(blocos()[0]).toHaveTextContent('Time B')
+    expect(blocos()[0]).toHaveTextContent('sem descrição')
+  })
+
+  it('cancelar o pop-up não registra nada', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: /Gol$/ }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: /Anotações/ })).not.toBeInTheDocument()
+  })
+
+  it('anotação geral pode ficar sem time; editar troca texto e time; apagar pede confirmação', () => {
+    render(<App />)
+    registrar(/Anotar/, 'Geral (sem time)', 'chuva')
+    registrar(/Gol$/, 'Time A', 'segunda')
+    expect(blocos()[0]).toHaveTextContent('segunda')
+    expect(blocos()[1]).toHaveTextContent('chuva')
+
+    const gol = blocos()[0]
+    fireEvent.click(within(gol).getByRole('button', { name: 'Editar' }))
+    fireEvent.change(within(gol).getByLabelText('Texto da anotação'), { target: { value: 'corrigida' } })
+    fireEvent.click(within(gol).getByRole('radio', { name: 'Time B' }))
+    fireEvent.click(within(gol).getByRole('button', { name: 'Salvar' }))
+    expect(gol).toHaveTextContent('corrigida')
+    expect(gol).toHaveTextContent('Time B')
+
+    fireEvent.click(within(blocos()[1]).getByRole('button', { name: 'Apagar' }))
+    fireEvent.click(within(blocos()[1]).getByRole('button', { name: 'Sim, apagar' }))
+    expect(blocos()).toHaveLength(1)
+  })
+
+  it('punição de 2 minutos anda com o jogo, pausa junto e avisa quando termina', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
+    act(() => vi.advanceTimersByTime(5_000))
+    registrar(/Punição/, 'Time A', 'Tião')
+
+    const painel = () => screen.getByRole('region', { name: /Punições/ })
+    expect(within(painel()).getByRole('timer')).toHaveTextContent('02:00')
+    expect(blocos()[0]).toHaveTextContent('Punição')
+
+    act(() => vi.advanceTimersByTime(30_000))
+    expect(within(painel()).getByRole('timer')).toHaveTextContent('01:30')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pausar' }))
+    act(() => vi.advanceTimersByTime(60_000))
+    expect(within(painel()).getByRole('timer')).toHaveTextContent('01:30')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    act(() => vi.advanceTimersByTime(90_000))
+    expect(within(painel()).getByText('Pode voltar ao jogo!')).toBeInTheDocument()
+    fireEvent.click(within(painel()).getByRole('button', { name: /Confirmar volta de Tião/ }))
+    expect(screen.queryByRole('region', { name: /Punições/ })).not.toBeInTheDocument()
+    expect(blocos()[0]).toHaveTextContent('Tião') // o registro continua nas anotações
+  })
+
+  it('marca gols e reseta tudo com confirmação', () => {
     render(<App />)
     fireEvent.change(screen.getByLabelText('Nome do primeiro time'), { target: { value: 'Unidos' } })
     fireEvent.click(screen.getByRole('button', { name: 'Gol de Unidos' }))
     fireEvent.click(screen.getByRole('button', { name: 'Gol de Unidos' }))
     expect(screen.getByLabelText('Gols de Unidos')).toHaveTextContent('2')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
-    act(() => vi.advanceTimersByTime(12 * 60_000 + 5_000))
-    fireEvent.change(screen.getByLabelText(/Jogador ou observação/), { target: { value: 'Zé' } })
-    fireEvent.click(screen.getByRole('button', { name: '🟨 Amarelo' }))
-    const blocos = within(screen.getByRole('list', { name: /Anotações/ })).getAllByRole('listitem')
-    expect(blocos[0]).toHaveTextContent("13'")
-    expect(blocos[0]).toHaveTextContent('Amarelo')
-    expect(blocos[0]).toHaveTextContent('Zé')
-    expect(screen.getByLabelText(/Jogador ou observação/)).toHaveValue('')
+    registrar(/Amarelo/, 'Unidos')
 
     fireEvent.click(screen.getByRole('button', { name: 'Resetar tudo' }))
     fireEvent.click(screen.getByRole('button', { name: 'Sim, zerar tudo' }))
     expect(screen.queryByRole('list', { name: /Anotações/ })).not.toBeInTheDocument()
     expect(screen.getByLabelText('Gols de Time A')).toHaveTextContent('0')
     expect(tempo()).toBe('25:00')
-  })
-
-  it('anotações: mais recente primeiro, editar e apagar com confirmação', () => {
-    render(<App />)
-    const campo = screen.getByLabelText(/Jogador ou observação/)
-    fireEvent.change(campo, { target: { value: 'primeira' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Anotar observação' }))
-    fireEvent.change(campo, { target: { value: 'segunda' } })
-    fireEvent.click(screen.getByRole('button', { name: '⚽ Gol' }))
-
-    const lista = screen.getByRole('list', { name: /Anotações/ })
-    let blocos = within(lista).getAllByRole('listitem')
-    expect(blocos[0]).toHaveTextContent('segunda')
-    expect(blocos[1]).toHaveTextContent('primeira')
-
-    fireEvent.click(within(blocos[1]).getByRole('button', { name: 'Editar' }))
-    fireEvent.change(within(blocos[1]).getByLabelText('Texto da anotação'), { target: { value: 'corrigida' } })
-    fireEvent.click(within(blocos[1]).getByRole('button', { name: 'Salvar' }))
-    expect(blocos[1]).toHaveTextContent('corrigida')
-
-    fireEvent.click(within(blocos[0]).getByRole('button', { name: 'Apagar' }))
-    fireEvent.click(within(blocos[0]).getByRole('button', { name: 'Sim, apagar' }))
-    blocos = within(lista).getAllByRole('listitem')
-    expect(blocos).toHaveLength(1)
-    expect(blocos[0]).toHaveTextContent('corrigida')
-  })
-
-  it('não cria anotação vazia pelo botão Anotar', () => {
-    render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Anotar observação' }))
-    expect(screen.queryByRole('list', { name: /Anotações/ })).not.toBeInTheDocument()
   })
 })

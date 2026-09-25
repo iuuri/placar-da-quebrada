@@ -5,25 +5,40 @@ import { ajustarAcrescimo, iniciar, pausar, zerar, type EstadoTimer, type Modo }
 
 export type Lado = 'casa' | 'visitante'
 
-export type TipoNota = 'amarelo' | 'vermelho' | 'gol' | 'troca' | 'nota'
+export type TipoNota = 'amarelo' | 'vermelho' | 'gol' | 'troca' | 'punicao' | 'nota'
 
 export type Nota = {
   id: string
   tipo: TipoNota
   minuto: number
   texto: string
+  lado: Lado | null // time do registro; null = geral (só em anotações)
 }
+
+// Punição de 2 minutos em andamento. Anda junto com o cronômetro do jogo:
+// se o jogo pausa, a punição pausa. O registro fica nas notas (mesmo id).
+export type Punicao = {
+  id: string
+  lado: Lado
+  texto: string
+  inicioMs: number // tempo de jogo decorrido quando a punição começou
+  duracaoMs: number
+}
+
+export const PUNICAO_MS = 2 * 60_000
 
 export type Estado = {
   timer: EstadoTimer
   placar: Record<Lado, { nome: string; gols: number; faltas: number }>
   notas: Nota[] // mais recente primeiro
+  punicoes: Punicao[] // em andamento
 }
 
 export const ESTADO_INICIAL: Estado = {
   timer: { modo: 'regressivo', duracaoSeg: 25 * 60, acrescimoSeg: 0, rodando: false, iniciadoEm: null, acumuladoMs: 0 },
   placar: { casa: { nome: 'Time A', gols: 0, faltas: 0 }, visitante: { nome: 'Time B', gols: 0, faltas: 0 } },
   notas: [],
+  punicoes: [],
 }
 
 export const MAX_TEXTO_NOTA = 140
@@ -38,9 +53,10 @@ export type Acao =
   | { tipo: 'nomeTime'; lado: Lado; nome: string }
   | { tipo: 'gol'; lado: Lado; delta: 1 | -1 }
   | { tipo: 'falta'; lado: Lado; delta: 1 | -1 }
-  | { tipo: 'adicionarNota'; nota: Nota }
-  | { tipo: 'editarNota'; id: string; texto: string }
+  | { tipo: 'adicionarNota'; nota: Nota; decorridoMs: number }
+  | { tipo: 'editarNota'; id: string; texto: string; lado: Lado | null }
   | { tipo: 'removerNota'; id: string }
+  | { tipo: 'encerrarPunicao'; id: string }
   | { tipo: 'resetarTudo' }
 
 export function reducer(estado: Estado, acao: Acao): Estado {
@@ -50,7 +66,8 @@ export function reducer(estado: Estado, acao: Acao): Estado {
     case 'pausar':
       return { ...estado, timer: pausar(estado.timer, acao.agora) }
     case 'zerarTempo':
-      return { ...estado, timer: zerar(estado.timer) }
+      // Punições contam pelo tempo de jogo: zerando o tempo, elas deixam de fazer sentido.
+      return { ...estado, timer: zerar(estado.timer), punicoes: [] }
     case 'definirModo':
       // Trocar de modo no meio confundiria o mostrador: recomeça o tempo.
       if (estado.timer.rodando) return estado
@@ -83,17 +100,36 @@ export function reducer(estado: Estado, acao: Acao): Estado {
     }
     case 'adicionarNota': {
       const nota = { ...acao.nota, texto: acao.nota.texto.trim().slice(0, MAX_TEXTO_NOTA) }
-      return { ...estado, notas: [nota, ...estado.notas] }
+      // Só anotação geral pode ficar sem time.
+      if (nota.tipo !== 'nota' && nota.lado === null) return estado
+      const punicoes =
+        nota.tipo === 'punicao' && nota.lado
+          ? [
+              ...estado.punicoes,
+              { id: nota.id, lado: nota.lado, texto: nota.texto, inicioMs: acao.decorridoMs, duracaoMs: PUNICAO_MS },
+            ]
+          : estado.punicoes
+      return { ...estado, notas: [nota, ...estado.notas], punicoes }
     }
-    case 'editarNota':
+    case 'editarNota': {
+      const texto = acao.texto.trim().slice(0, MAX_TEXTO_NOTA)
+      const alvo = estado.notas.find((n) => n.id === acao.id)
+      if (!alvo) return estado
+      const lado = alvo.tipo === 'nota' ? acao.lado : (acao.lado ?? alvo.lado)
       return {
         ...estado,
-        notas: estado.notas.map((n) =>
-          n.id === acao.id ? { ...n, texto: acao.texto.trim().slice(0, MAX_TEXTO_NOTA) } : n,
-        ),
+        notas: estado.notas.map((n) => (n.id === acao.id ? { ...n, texto, lado } : n)),
+        punicoes: estado.punicoes.map((p) => (p.id === acao.id && lado ? { ...p, texto, lado } : p)),
       }
+    }
     case 'removerNota':
-      return { ...estado, notas: estado.notas.filter((n) => n.id !== acao.id) }
+      return {
+        ...estado,
+        notas: estado.notas.filter((n) => n.id !== acao.id),
+        punicoes: estado.punicoes.filter((p) => p.id !== acao.id),
+      }
+    case 'encerrarPunicao':
+      return { ...estado, punicoes: estado.punicoes.filter((p) => p.id !== acao.id) }
     case 'resetarTudo':
       return ESTADO_INICIAL
   }
@@ -115,6 +151,7 @@ export function converterTextoAntigo(texto: string): Nota[] {
         minuto: m ? Number(m[1]) : 0,
         tipo: (m?.[2] && EMOJI_PARA_TIPO[m[2]]) || 'nota',
         texto: (m ? m[3] : linha).slice(0, MAX_TEXTO_NOTA),
+        lado: null,
       }
     })
     .reverse()
@@ -135,10 +172,11 @@ export function carregar(): Estado {
         visitante: { ...ESTADO_INICIAL.placar.visitante, ...salvo.placar?.visitante },
       },
       notas: Array.isArray(salvo.notas)
-        ? salvo.notas
+        ? salvo.notas.map((n) => ({ ...n, lado: n.lado ?? null }))
         : typeof salvo.anotacoes === 'string'
           ? converterTextoAntigo(salvo.anotacoes)
           : [],
+      punicoes: Array.isArray(salvo.punicoes) ? salvo.punicoes : [],
     }
   } catch {
     return ESTADO_INICIAL

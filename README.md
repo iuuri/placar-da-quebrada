@@ -13,8 +13,9 @@ Timer e placar para jogos de futebol de bairro, direto no navegador do celular, 
   - Continua certo se a tela apagar ou a página recarregar
   - Mantém a tela acesa enquanto o tempo corre (quando o aparelho permite)
 - **Placar** com o nome dos dois times, gols (+1 / −1) e **faltas por time**
-- **Anotações em blocos separados**, da mais recente para a mais antiga (com rolagem): escreva o jogador (opcional) e toque em 🟨 amarelo, 🟥 vermelho, ⚽ gol, 🔁 troca ou 📝 anotar; o minuto do jogo é registrado sozinho. Cada bloco pode ser editado ou apagado (com confirmação)
-- **Súmula do jogo**: resumo na tela (faltas, cartões, gols, trocas) e botão que gera um **PDF protegido contra edição** com placar, faltas, tempo e todas as anotações, para compartilhar pelo celular (WhatsApp, e-mail…) ou baixar
+- **Registros por time**: toque em 🟨 amarelo, 🟥 vermelho, ⚽ gol, 🔁 troca, ⏱️ punição 2' ou 📝 anotar e escolha o time num pop-up (nome do jogador opcional). O minuto do jogo é registrado sozinho. Cada registro vira um bloco (mais recente primeiro, com rolagem) que pode ser editado (texto e time) ou apagado
+- **Punição de 2 minutos**: cronômetro regressivo por jogador, que anda junto com o tempo de jogo (pausa quando o jogo pausa) e avisa quando o jogador pode voltar
+- **Súmula do jogo**: resumo por time na tela (faltas, cartões, gols, trocas, punições) e botão que gera um **PDF protegido contra edição** com placar, faltas, tempo e todas as anotações, para compartilhar pelo celular (WhatsApp, e-mail…) ou baixar
 - **Resetar tudo**: zera placar, tempo e anotações (pede confirmação)
 
 Não há login nem banco de dados: tudo fica salvo **só no navegador do aparelho** que está usando.

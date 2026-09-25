@@ -1,4 +1,5 @@
-import type { Estado, Nota, TipoNota } from '@/estado'
+import type { Estado, Lado, Nota, TipoNota } from '@/estado'
+import { ORDEM_TIPOS, TIPOS } from '@/tipos'
 import { decorridoMs, formatar } from '@/tempo'
 
 // Súmula do jogo em PDF, gerada no próprio aparelho (sem servidor).
@@ -9,30 +10,24 @@ export const ROTULO_TIPO: Record<TipoNota, string> = {
   vermelho: 'Cartão vermelho',
   gol: 'Gol',
   troca: 'Substituição',
+  punicao: 'Punição 2 min',
   nota: 'Anotação',
-}
-
-const COR_TIPO: Record<TipoNota, [number, number, number]> = {
-  amarelo: [255, 201, 40],
-  vermelho: [214, 40, 57],
-  gol: [31, 122, 58],
-  troca: [74, 86, 114],
-  nota: [201, 206, 214],
-}
-
-const ROTULO_RESUMO: Record<TipoNota, string> = {
-  amarelo: 'Cartões amarelos',
-  vermelho: 'Cartões vermelhos',
-  gol: 'Gols',
-  troca: 'Substituições',
-  nota: 'Outras anotações',
 }
 
 export type Contagem = Record<TipoNota, number>
 
+const vazia = (): Contagem => ({ amarelo: 0, vermelho: 0, gol: 0, troca: 0, punicao: 0, nota: 0 })
+
 export function contarNotas(notas: Nota[]): Contagem {
-  const c: Contagem = { amarelo: 0, vermelho: 0, gol: 0, troca: 0, nota: 0 }
+  const c = vazia()
   for (const n of notas) c[n.tipo]++
+  return c
+}
+
+// Contagem separada por time; "geral" guarda anotações sem time.
+export function contarPorTime(notas: Nota[]): Record<Lado | 'geral', Contagem> {
+  const c = { casa: vazia(), visitante: vazia(), geral: vazia() }
+  for (const n of notas) c[n.lado ?? 'geral'][n.tipo]++
   return c
 }
 
@@ -135,26 +130,32 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
   linha('Acréscimo', t.acrescimoSeg > 0 ? formatar(t.acrescimoSeg * 1000) : 'Nenhum')
   linha('Tempo jogado', formatar(decorridoMs(t, agora)))
 
-  // Resumo das anotações
-  const c = contarNotas(estado.notas)
+  // Resumo por time
+  const porTime = contarPorTime(estado.notas)
   y += 3
   doc.line(L, y - 5, L + largura, y - 5)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.text('Resumo', L, y + 1)
+  const colA = L + 95
+  const colB = L + 140
+  doc.setFontSize(10)
+  doc.text(nomeCasa, colA, y + 1, { align: 'center', maxWidth: 42 })
+  doc.text(nomeVisitante, colB, y + 1, { align: 'center', maxWidth: 42 })
   y += 8
-  const tipos: TipoNota[] = ['amarelo', 'vermelho', 'gol', 'troca', 'nota']
-  const colunas = [L, L + 60, L + 120]
-  tipos.forEach((tipo, i) => {
-    const x = colunas[i % 3]
-    const yy = y + Math.floor(i / 3) * 7
-    doc.setFillColor(...COR_TIPO[tipo])
-    doc.rect(x, yy - 3.5, 4, 4, 'F')
+  doc.setFontSize(11)
+  for (const tipo of ORDEM_TIPOS) {
+    doc.setFillColor(...TIPOS[tipo].rgb)
+    doc.rect(L, y - 3.5, 4, 4, 'F')
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(11)
-    doc.text(`${ROTULO_RESUMO[tipo]}: ${c[tipo]}`, x + 6, yy)
-  })
-  y += 18
+    const geral = porTime.geral[tipo]
+    doc.text(TIPOS[tipo].plural + (tipo === 'nota' && geral > 0 ? ` (+${geral} gerais)` : ''), L + 6, y)
+    doc.setFont('helvetica', 'bold')
+    doc.text(String(porTime.casa[tipo]), colA, y, { align: 'center' })
+    doc.text(String(porTime.visitante[tipo]), colB, y, { align: 'center' })
+    y += 6.5
+  }
+  y += 6
 
   // Lista de anotações, em ordem cronológica
   doc.line(L, y - 5, L + largura, y - 5)
@@ -170,19 +171,21 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
   const cronologica = [...estado.notas].reverse()
   for (const n of cronologica) {
     const descricao = textoSeguro(n.texto)
-    const linhas = doc.splitTextToSize(descricao || '-', largura - 60) as string[]
+    const time = n.lado ? (n.lado === 'casa' ? nomeCasa : nomeVisitante) : 'Geral'
+    const linhas = doc.splitTextToSize(descricao || '-', largura - 98) as string[]
     const altura = Math.max(1, linhas.length) * 5.5 + 2
     if (y + altura > 280) {
       doc.addPage()
       y = 20
     }
-    doc.setFillColor(...COR_TIPO[n.tipo])
+    doc.setFillColor(...TIPOS[n.tipo].rgb)
     doc.rect(L, y - 3.8, 3, 4.5, 'F')
     doc.setFont('helvetica', 'bold')
     doc.text(`${n.minuto}'`, L + 6, y)
     doc.text(ROTULO_TIPO[n.tipo], L + 18, y)
     doc.setFont('helvetica', 'normal')
-    doc.text(linhas, L + 60, y)
+    doc.text(time, L + 56, y, { maxWidth: 38 })
+    doc.text(linhas, L + 98, y)
     y += altura
   }
 

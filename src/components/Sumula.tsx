@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Estado } from '@/estado'
-import { compartilharOuBaixar, contarNotas, gerarSumulaPdf, nomeDoArquivo } from '@/lib/sumula'
+import { compartilharOuBaixar, contarPorTime, gerarSumulaPdf, nomeDoArquivo } from '@/lib/sumula'
+import { ORDEM_TIPOS, TIPOS } from '@/tipos'
 import { Botao } from './Botao'
 
 type Status = { tipo: 'ok' | 'erro'; texto: string } | null
@@ -9,7 +10,9 @@ export function Sumula({ estado }: { estado: Estado }) {
   const [gerando, setGerando] = useState(false)
   const [status, setStatus] = useState<Status>(null)
   const { casa, visitante } = estado.placar
-  const c = contarNotas(estado.notas)
+  const c = contarPorTime(estado.notas)
+  const nomeA = casa.nome || 'Time A'
+  const nomeB = visitante.nome || 'Time B'
 
   async function gerar() {
     setGerando(true)
@@ -28,35 +31,50 @@ export function Sumula({ estado }: { estado: Estado }) {
     }
   }
 
-  const resumo: [string, number][] = [
-    ['🟨 Amarelos', c.amarelo],
-    ['🟥 Vermelhos', c.vermelho],
-    ['⚽ Gols anotados', c.gol],
-    ['🔁 Trocas', c.troca],
-  ]
-
   return (
     <section aria-labelledby="titulo-sumula" className="flex flex-col gap-3 rounded-md border-2 border-tinta bg-white p-3">
       <h2 id="titulo-sumula" className="font-display text-3xl font-bold">
         Súmula do jogo
       </h2>
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-        <dt className="font-bold">Faltas</dt>
-        <dd className="text-right tabular-nums">
-          {casa.faltas} × {visitante.faltas}
-        </dd>
-        {resumo.map(([rotulo, n]) => (
-          <div key={rotulo} className="contents">
-            <dt>{rotulo}</dt>
-            <dd className="text-right font-bold tabular-nums">{n}</dd>
-          </div>
-        ))}
-      </dl>
+      <table className="w-full table-fixed text-sm">
+        <caption className="sr-only">Resumo por time</caption>
+        <thead>
+          <tr className="border-b-2 border-muro-escuro text-left">
+            <th scope="col" className="w-[46%] pb-1 font-normal text-tinta-suave">
+              &nbsp;
+            </th>
+            <th scope="col" className="truncate pb-1 text-center font-bold">
+              {nomeA}
+            </th>
+            <th scope="col" className="truncate pb-1 text-center font-bold">
+              {nomeB}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="tabular-nums">
+          <tr>
+            <th scope="row" className="py-0.5 text-left font-normal">
+              Faltas
+            </th>
+            <td className="text-center font-bold">{casa.faltas}</td>
+            <td className="text-center font-bold">{visitante.faltas}</td>
+          </tr>
+          {ORDEM_TIPOS.filter((t) => t !== 'nota').map((tipo) => (
+            <tr key={tipo}>
+              <th scope="row" className="truncate py-0.5 text-left font-normal">
+                <span aria-hidden>{TIPOS[tipo].emoji}</span> {TIPOS[tipo].plural}
+              </th>
+              <td className="text-center font-bold">{c.casa[tipo]}</td>
+              <td className="text-center font-bold">{c.visitante[tipo]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <Botao className="min-h-14 text-lg" disabled={gerando} onClick={gerar}>
         {gerando ? 'Gerando PDF…' : '📄 Gerar súmula em PDF'}
       </Botao>
       <p className="text-sm text-tinta-suave">
-        Placar, faltas, tempo e todas as anotações num PDF protegido contra edição, pronto para mandar no WhatsApp.
+        Placar, faltas, tempo, contagem por time e todas as anotações num PDF protegido contra edição, pronto para mandar no WhatsApp.
       </p>
       {status ? (
         <p role="status" className={status.tipo === 'erro' ? 'font-bold text-cartao' : 'font-bold text-gramado'}>

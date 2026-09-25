@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { Anotacoes } from './components/Anotacoes'
 import { Cronometro } from './components/Cronometro'
 import { Placar } from './components/Placar'
+import { Punicoes } from './components/Punicoes'
 import { ResetarTudo } from './components/ResetarTudo'
 import { Sumula } from './components/Sumula'
 import { useEstado } from './estado'
 import { apitar, manterTelaAcesa } from './lib/recursos'
-import { acabou, acabouAcrescimo, minutoDeJogo } from './tempo'
+import { acabou, acabouAcrescimo, decorridoMs, minutoDeJogo, restantePunicaoMs } from './tempo'
 
 // Relógio da tela: só "bate" enquanto o tempo corre (o valor certo vem dos timestamps).
 function useAgora(ativo: boolean) {
@@ -43,6 +44,18 @@ export function App() {
     apitouAcrescimo.current = fimAcrescimo
   }, [fimAcrescimo, timer.rodando])
 
+  // Apita quando alguma punição de 2 minutos termina.
+  const cumpridas = estado.punicoes
+    .filter((p) => restantePunicaoMs(p, timer, agora) === 0)
+    .map((p) => p.id)
+    .join(',')
+  const cumpridasAntes = useRef(cumpridas)
+  useEffect(() => {
+    const antes = new Set(cumpridasAntes.current.split(',').filter(Boolean))
+    if (cumpridas.split(',').some((id) => id && !antes.has(id))) apitar()
+    cumpridasAntes.current = cumpridas
+  }, [cumpridas])
+
   useEffect(() => {
     if (!timer.rodando) return
     let liberar: (() => void) | undefined
@@ -68,9 +81,16 @@ export function App() {
         <div className="flex flex-col gap-5">
           <Placar placar={estado.placar} despachar={despachar} />
           <Cronometro timer={timer} agora={agora} despachar={despachar} />
+          <Punicoes punicoes={estado.punicoes} placar={estado.placar} timer={timer} agora={agora} despachar={despachar} />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
-          <Anotacoes notas={estado.notas} minuto={minutoDeJogo(timer, agora)} despachar={despachar} />
+          <Anotacoes
+            notas={estado.notas}
+            placar={estado.placar}
+            minuto={minutoDeJogo(timer, agora)}
+            decorridoMs={decorridoMs(timer, agora)}
+            despachar={despachar}
+          />
           <Sumula estado={estado} />
         </div>
       </main>

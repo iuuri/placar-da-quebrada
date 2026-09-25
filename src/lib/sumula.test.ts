@@ -1,5 +1,5 @@
 import { ESTADO_INICIAL, type Estado } from '@/estado'
-import { contarNotas, gerarSumulaPdf, nomeDoArquivo, textoSeguro } from './sumula'
+import { contarNotas, contarPorTime, gerarSumulaPdf, nomeDoArquivo, textoSeguro } from './sumula'
 
 const jogo: Estado = {
   ...ESTADO_INICIAL,
@@ -8,15 +8,18 @@ const jogo: Estado = {
     visitante: { nome: 'São Jorge FC', gols: 2, faltas: 7 },
   },
   notas: [
-    { id: '3', tipo: 'vermelho', minuto: 40, texto: 'Tião 🔥 (São Jorge)' },
-    { id: '2', tipo: 'amarelo', minuto: 20, texto: 'Zé' },
-    { id: '1', tipo: 'amarelo', minuto: 12, texto: '' },
+    { id: '3', tipo: 'vermelho', minuto: 40, texto: 'Tião 🔥 (São Jorge)', lado: 'visitante' },
+    { id: '2', tipo: 'amarelo', minuto: 20, texto: 'Zé', lado: 'casa' },
+    { id: '1', tipo: 'amarelo', minuto: 12, texto: '', lado: 'visitante' },
   ],
 }
 
 describe('súmula', () => {
   it('conta as anotações por tipo', () => {
-    expect(contarNotas(jogo.notas)).toEqual({ amarelo: 2, vermelho: 1, gol: 0, troca: 0, nota: 0 })
+    expect(contarNotas(jogo.notas)).toEqual({ amarelo: 2, vermelho: 1, gol: 0, troca: 0, punicao: 0, nota: 0 })
+    const porTime = contarPorTime(jogo.notas)
+    expect(porTime.casa.amarelo).toBe(1)
+    expect(porTime.visitante).toMatchObject({ amarelo: 1, vermelho: 1 })
   })
 
   it('tira emojis mas mantém acentos', () => {

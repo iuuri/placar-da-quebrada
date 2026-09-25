@@ -3,6 +3,7 @@ import { Anotacoes } from './components/Anotacoes'
 import { Cronometro } from './components/Cronometro'
 import { Placar } from './components/Placar'
 import { ResetarTudo } from './components/ResetarTudo'
+import { Sumula } from './components/Sumula'
 import { useEstado } from './estado'
 import { apitar, manterTelaAcesa } from './lib/recursos'
 import { acabou, acabouAcrescimo, minutoDeJogo } from './tempo'
@@ -63,12 +64,15 @@ export function App() {
         <ResetarTudo onResetar={() => despachar({ tipo: 'resetarTudo' })} />
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 pb-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-[minmax(0,1fr)] gap-6 px-4 pb-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-5">
           <Placar placar={estado.placar} despachar={despachar} />
           <Cronometro timer={timer} agora={agora} despachar={despachar} />
         </div>
-        <Anotacoes notas={estado.notas} minuto={minutoDeJogo(timer, agora)} despachar={despachar} />
+        <div className="flex min-w-0 flex-col gap-6">
+          <Anotacoes notas={estado.notas} minuto={minutoDeJogo(timer, agora)} despachar={despachar} />
+          <Sumula estado={estado} />
+        </div>
       </main>
 
       <footer className="px-4 pb-4 text-center text-xs text-tinta-suave">

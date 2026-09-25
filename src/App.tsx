@@ -78,32 +78,25 @@ export function App() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <h1 className="inline-flex -rotate-1 flex-col bg-placa px-3 py-1 font-display leading-none text-tinta shadow-[4px_4px_0_var(--color-tinta)]">
-          <span className="text-[0.7rem] font-bold tracking-wide">placar da</span>
-          <span className="text-2xl font-black uppercase">Quebrada</span>
-        </h1>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <BotaoSumula estado={estado} />
-          <ResetarTudo
-            onResetar={() => {
-              despachar({ tipo: 'resetarTudo' })
-              setCronometroAberto(true)
-            }}
-          />
+      {/* Topo fixo: logo e, depois de iniciar, o cronômetro resumido ao lado. */}
+      <header className="sticky top-0 z-40 bg-muro/90 backdrop-blur-sm">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-2">
+          <h1 className="inline-flex shrink-0 -rotate-1 flex-col bg-placa px-2.5 py-1 font-display leading-none text-tinta shadow-[3px_3px_0_var(--color-tinta)] min-[360px]:px-3">
+            <span className="text-[0.65rem] font-bold tracking-wide">placar da</span>
+            <span className="text-lg font-black uppercase min-[360px]:text-2xl">Quebrada</span>
+          </h1>
+          {cronometroCompleto ? null : (
+            <CronometroMini timer={timer} agora={agora} despachar={despachar} onAbrir={() => setCronometroAberto(true)} />
+          )}
         </div>
       </header>
 
-      <main
-        className={`mx-auto grid w-full max-w-6xl flex-1 grid-cols-[minmax(0,1fr)] gap-6 px-4 lg:grid-cols-[minmax(0,1fr)_22rem] ${cronometroCompleto ? 'pb-10' : 'pb-28'}`}
-      >
+      <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-[minmax(0,1fr)] gap-6 px-4 pt-2 pb-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-5">
           <Placar placar={estado.placar} despachar={despachar} />
           {cronometroCompleto ? (
             <Cronometro timer={timer} agora={agora} despachar={despachar} onRecolher={() => setCronometroAberto(false)} />
-          ) : (
-            <CronometroMini timer={timer} agora={agora} despachar={despachar} onAbrir={() => setCronometroAberto(true)} />
-          )}
+          ) : null}
           <Punicoes punicoes={estado.punicoes} placar={estado.placar} timer={timer} agora={agora} despachar={despachar} />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
@@ -117,8 +110,22 @@ export function App() {
         </div>
       </main>
 
-      <footer className="px-4 pb-4 text-center text-xs text-tinta-suave">
-        Os dados ficam salvos só neste aparelho. “Resetar tudo” apaga placar, tempo e anotações.
+      {/* Ações de fim de jogo ficam no fim da página, longe dos botões do dia a dia. */}
+      <footer className="border-t-2 border-muro-escuro px-4 pt-4 pb-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <BotaoSumula estado={estado} />
+            <ResetarTudo
+              onResetar={() => {
+                despachar({ tipo: 'resetarTudo' })
+                setCronometroAberto(true)
+              }}
+            />
+          </div>
+          <p className="text-center text-xs text-tinta-suave">
+            Os dados ficam salvos só neste aparelho. “Resetar tudo” apaga placar, tempo e anotações.
+          </p>
+        </div>
       </footer>
     </div>
   )

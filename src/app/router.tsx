@@ -57,6 +57,10 @@ export const router = createBrowserRouter([
             element: sobDemanda(() => import('@/features/campeonatos/pages/CampeonatosAdminPage'), 'CampeonatosAdminPage'),
           },
           {
+            path: 'usuarios',
+            element: sobDemanda(() => import('@/features/usuarios/pages/UsuariosPage'), 'UsuariosPage'),
+          },
+          {
             path: 'campeonatos/novo',
             element: sobDemanda(() => import('@/features/campeonatos/pages/CampeonatoFormPage'), 'CampeonatoFormPage'),
           },

@@ -23,7 +23,7 @@ Cada fase termina **publicada** em `placar-da-quebrada.pages.dev`. Uma fase = um
 - [x] 2.1 Migration `cadastros`: `campeonatos`, `times`, `jogadores` + RLS + `private.is_staff()`
 - [x] 2.2 Tela: criar/editar/apagar campeonato
 - [x] 2.3 Tela: times e jogadores
-- [ ] 2.4 Edge Function `admin-users` + tela de operadores
+- [x] 2.4 Edge Function `admin-users` + tela de operadores (criar, trocar senha, ativar/desativar, mudar papel)
 - [ ] 2.5 Páginas públicas do campeonato e do time
 - [ ] CRUD campeonato com regras
 - [ ] CRUD times e jogadores

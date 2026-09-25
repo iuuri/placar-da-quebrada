@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
-const email = z.email('Informe um e-mail válido.')
+// trim antes de validar: teclado de celular costuma deixar espaço no fim
+const email = z.string().trim().toLowerCase().pipe(z.email('Informe um e-mail válido.'))
 
 export const loginSchema = z.object({
   email,

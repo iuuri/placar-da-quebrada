@@ -41,7 +41,7 @@
 | `/admin/campeonatos/:id/times` | admin | Lista de times |
 | `/admin/campeonatos/:id/times/novo`, `/admin/campeonatos/:id/times/:timeId` | admin | Criar/editar/apagar time e gerenciar o elenco |
 | `/admin/campeonatos/:id/partidas` | admin | Agenda e operadores |
-| `/admin/usuarios` | admin | Operadores |
+| `/admin/usuarios` | admin | Operadores: criar acesso, trocar senha, ativar/desativar, mudar papel |
 
 - Guardas de rota por perfil (`RequireRole`) — apenas UX; a proteção real é RLS.
 - Dados via TanStack Query; o client Supabase só é usado em `features/*/api.ts`.

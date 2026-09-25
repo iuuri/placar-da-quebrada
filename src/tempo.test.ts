@@ -9,6 +9,7 @@ import {
   iniciar,
   minutoDeJogo,
   pausar,
+  restantePunicaoMs,
   zerar,
   type EstadoTimer,
 } from './tempo'
@@ -115,15 +116,15 @@ describe('reducer', () => {
 
   it('resetar tudo volta ao estado inicial', () => {
     let e = reducer(ESTADO_INICIAL, { tipo: 'gol', lado: 'casa', delta: 1 })
-    e = reducer(e, { tipo: 'adicionarNota', nota: { id: '1', tipo: 'nota', minuto: 3, texto: 'oi' } })
+    e = reducer(e, { tipo: 'adicionarNota', nota: { id: '1', tipo: 'nota', minuto: 3, texto: 'oi', lado: null }, decorridoMs: 0 })
     expect(reducer(e, { tipo: 'resetarTudo' })).toEqual(ESTADO_INICIAL)
   })
 })
 
 describe('notas', () => {
   it('novas entram no topo e o texto é limitado', () => {
-    let e = reducer(ESTADO_INICIAL, { tipo: 'adicionarNota', nota: { id: 'a', tipo: 'gol', minuto: 2, texto: ' Zé ' } })
-    e = reducer(e, { tipo: 'adicionarNota', nota: { id: 'b', tipo: 'nota', minuto: 5, texto: 'x'.repeat(200) } })
+    let e = reducer(ESTADO_INICIAL, { tipo: 'adicionarNota', nota: { id: 'a', tipo: 'gol', minuto: 2, texto: ' Zé ', lado: 'casa' }, decorridoMs: 0 })
+    e = reducer(e, { tipo: 'adicionarNota', nota: { id: 'b', tipo: 'nota', minuto: 5, texto: 'x'.repeat(200), lado: null }, decorridoMs: 0 })
     expect(e.notas.map((n) => n.id)).toEqual(['b', 'a'])
     expect(e.notas[1].texto).toBe('Zé')
     expect(e.notas[0].texto).toHaveLength(140)
@@ -132,9 +133,53 @@ describe('notas', () => {
   it('converte o texto livre da versão anterior em blocos', () => {
     const notas = converterTextoAntigo(["12' 🟨 Zé", '', 'observação solta', "30' ⚽ Tião"].join('\n'))
     expect(notas).toEqual([
-      { id: 'antiga-2', minuto: 30, tipo: 'gol', texto: 'Tião' },
-      { id: 'antiga-1', minuto: 0, tipo: 'nota', texto: 'observação solta' },
-      { id: 'antiga-0', minuto: 12, tipo: 'amarelo', texto: 'Zé' },
+      { id: 'antiga-2', minuto: 30, tipo: 'gol', texto: 'Tião', lado: null },
+      { id: 'antiga-1', minuto: 0, tipo: 'nota', texto: 'observação solta', lado: null },
+      { id: 'antiga-0', minuto: 12, tipo: 'amarelo', texto: 'Zé', lado: null },
     ])
+  })
+})
+
+describe('registros por time e punições', () => {
+  it('cartão sem time é recusado (só anotação geral pode ficar sem time)', () => {
+    const e = reducer(ESTADO_INICIAL, {
+      tipo: 'adicionarNota',
+      nota: { id: 'x', tipo: 'amarelo', minuto: 1, texto: '', lado: null },
+      decorridoMs: 0,
+    })
+    expect(e).toBe(ESTADO_INICIAL)
+  })
+
+  it('punição cria o registro e o cronômetro; apagar o registro tira a punição', () => {
+    let e = reducer(ESTADO_INICIAL, {
+      tipo: 'adicionarNota',
+      nota: { id: 'p', tipo: 'punicao', minuto: 3, texto: 'Tião', lado: 'visitante' },
+      decorridoMs: 150_000,
+    })
+    expect(e.notas[0].id).toBe('p')
+    expect(e.punicoes).toEqual([{ id: 'p', lado: 'visitante', texto: 'Tião', inicioMs: 150_000, duracaoMs: 120_000 }])
+    e = reducer(e, { tipo: 'editarNota', id: 'p', texto: 'Tião 4', lado: 'casa' })
+    expect(e.punicoes[0]).toMatchObject({ texto: 'Tião 4', lado: 'casa' })
+    e = reducer(e, { tipo: 'removerNota', id: 'p' })
+    expect(e.punicoes).toEqual([])
+  })
+
+  it('zerar o tempo encerra as punições, mas mantém os registros', () => {
+    let e = reducer(ESTADO_INICIAL, {
+      tipo: 'adicionarNota',
+      nota: { id: 'p', tipo: 'punicao', minuto: 1, texto: '', lado: 'casa' },
+      decorridoMs: 0,
+    })
+    e = reducer(e, { tipo: 'zerarTempo' })
+    expect(e.punicoes).toEqual([])
+    expect(e.notas).toHaveLength(1)
+  })
+
+  it('tempo restante da punição segue o tempo de jogo', () => {
+    const t = iniciar({ ...base, duracaoSeg: 0 }, 0)
+    const p = { inicioMs: 10_000, duracaoMs: 120_000 }
+    expect(restantePunicaoMs(p, t, 40_000)).toBe(90_000)
+    expect(restantePunicaoMs(p, pausar(t, 40_000), 999_000)).toBe(90_000)
+    expect(restantePunicaoMs(p, t, 200_000)).toBe(0)
   })
 })

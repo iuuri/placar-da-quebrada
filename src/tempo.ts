@@ -79,3 +79,8 @@ export function ajustarAcrescimo(t: EstadoTimer, deltaSeg: number): EstadoTimer 
 export function zerar(t: EstadoTimer): EstadoTimer {
   return { ...t, rodando: false, iniciadoEm: null, acumuladoMs: 0, acrescimoSeg: 0 }
 }
+
+// Tempo que falta numa punição, contado pelo tempo de jogo (pausa junto com o jogo).
+export function restantePunicaoMs(p: { inicioMs: number; duracaoMs: number }, t: EstadoTimer, agora: number): number {
+  return Math.max(0, p.duracaoMs - Math.max(0, decorridoMs(t, agora) - p.inicioMs))
+}

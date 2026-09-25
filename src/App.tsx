@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Anotacoes } from './components/Anotacoes'
 import { Cronometro } from './components/Cronometro'
 import { Placar } from './components/Placar'
 import { ResetarTudo } from './components/ResetarTudo'
 import { useEstado } from './estado'
 import { apitar, manterTelaAcesa } from './lib/recursos'
-import { acabou, minutoDeJogo } from './tempo'
+import { acabou, acabouAcrescimo, minutoDeJogo } from './tempo'
 
 // Relógio da tela: só "bate" enquanto o tempo corre (o valor certo vem dos timestamps).
 function useAgora(ativo: boolean) {
@@ -33,6 +33,14 @@ export function App() {
       apitar()
     }
   }, [timer.rodando, fim, despachar])
+
+  // Progressivo: apita uma vez quando termina o acréscimo dado (o tempo continua correndo).
+  const fimAcrescimo = acabouAcrescimo(timer, agora)
+  const apitouAcrescimo = useRef(fimAcrescimo)
+  useEffect(() => {
+    if (fimAcrescimo && !apitouAcrescimo.current && timer.rodando) apitar()
+    apitouAcrescimo.current = fimAcrescimo
+  }, [fimAcrescimo, timer.rodando])
 
   useEffect(() => {
     if (!timer.rodando) return

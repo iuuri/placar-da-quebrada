@@ -16,6 +16,7 @@ function tempo() {
 describe('App', () => {
   it('conta, pausa e continua salvo depois de recarregar', () => {
     const { unmount } = render(<App />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Progressivo' }))
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
     act(() => vi.advanceTimersByTime(65_000))
     expect(tempo()).toBe('01:05')
@@ -28,17 +29,33 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeInTheDocument()
   })
 
-  it('regressivo para sozinho no zero', () => {
+  it('regressivo é o padrão, para sozinho no zero e aceita acréscimo', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('radio', { name: 'Regressivo' }))
+    expect(screen.getByRole('radio', { name: 'Regressivo' })).toHaveAttribute('aria-checked', 'true')
     fireEvent.change(screen.getByLabelText('Minutos'), { target: { value: '0' } })
     fireEvent.change(screen.getByLabelText('Segundos'), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
     act(() => vi.advanceTimersByTime(4_000))
 
     expect(tempo()).toBe('00:00')
-    expect(screen.getByText('Fim do tempo!')).toBeInTheDocument()
+    expect(screen.getByText(/Fim do tempo!/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Pausar' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dar 1 minuto de acréscimo' }))
+    expect(tempo()).toBe('01:00')
+    expect(screen.getByText('Com acréscimo de +01:00')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    act(() => vi.advanceTimersByTime(30_000))
+    expect(tempo()).toBe('00:30')
+  })
+
+  it('marca faltas por time', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Falta de Time B' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Falta de Time B' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tirar uma falta de Time B' }))
+    expect(screen.getByLabelText('Faltas de Time B')).toHaveTextContent('1')
+    expect(screen.getByLabelText('Faltas de Time A')).toHaveTextContent('0')
   })
 
   it('marca gols, anota com o minuto e reseta tudo com confirmação', () => {
@@ -62,7 +79,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sim, zerar tudo' }))
     expect(screen.queryByRole('list', { name: /Anotações/ })).not.toBeInTheDocument()
     expect(screen.getByLabelText('Gols de Time A')).toHaveTextContent('0')
-    expect(tempo()).toBe('00:00')
+    expect(tempo()).toBe('25:00')
   })
 
   it('anotações: mais recente primeiro, editar e apagar com confirmação', () => {

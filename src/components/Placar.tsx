@@ -3,7 +3,9 @@ import { Botao } from './Botao'
 
 type Props = { placar: Estado['placar']; despachar: (a: Acao) => void }
 
-function Time({ lado, nome, gols, despachar }: { lado: Lado; nome: string; gols: number; despachar: Props['despachar'] }) {
+type TimeProps = { lado: Lado; nome: string; gols: number; faltas: number; despachar: Props['despachar'] }
+
+function Time({ lado, nome, gols, faltas, despachar }: TimeProps) {
   const id = `nome-${lado}`
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
@@ -42,6 +44,33 @@ function Time({ lado, nome, gols, despachar }: { lado: Lado; nome: string; gols:
         >
           + Gol
         </Botao>
+      </div>
+      <div className="mt-1 flex w-full items-center justify-between gap-2 rounded-md bg-muro px-2 py-1">
+        <span className="text-sm font-bold">
+          Faltas{' '}
+          <output aria-live="polite" aria-label={`Faltas de ${nome}`} className="font-display text-2xl font-black tabular-nums">
+            {faltas}
+          </output>
+        </span>
+        <div className="flex gap-1">
+          <Botao
+            variante="contorno"
+            className="min-h-10 w-10 px-0 text-xl"
+            aria-label={`Tirar uma falta de ${nome}`}
+            disabled={faltas === 0}
+            onClick={() => despachar({ tipo: 'falta', lado, delta: -1 })}
+          >
+            −
+          </Botao>
+          <Botao
+            variante="contorno"
+            className="min-h-10 w-10 px-0 text-xl"
+            aria-label={`Falta de ${nome}`}
+            onClick={() => despachar({ tipo: 'falta', lado, delta: 1 })}
+          >
+            +
+          </Botao>
+        </div>
       </div>
     </div>
   )

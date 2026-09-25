@@ -52,9 +52,14 @@ export function CampeonatoFormPage() {
           <h1 className="font-display text-4xl font-black">{editando ? campeonato!.nome : 'Novo campeonato'}</h1>
         </div>
         {editando ? (
-          <Link to={`/admin/campeonatos/${id}/times`} className={buttonVariants()}>
-            Times e jogadores
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/c/${campeonato!.slug}`} className={buttonVariants({ variant: 'secondary' })}>
+              Ver página pública
+            </Link>
+            <Link to={`/admin/campeonatos/${id}/times`} className={buttonVariants()}>
+              Times e jogadores
+            </Link>
+          </div>
         ) : null}
       </div>
 

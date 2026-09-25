@@ -3,7 +3,7 @@ import { Carregando } from '@/app/pages/Carregando'
 import { Alert } from '@/components/ui/alert'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { useCampeonato } from '@/features/campeonatos/hooks'
-import { EscudoSigla } from '../components/EscudoSigla'
+import { EscudoSigla } from '@/components/EscudoSigla'
 import { useTimes } from '../hooks'
 
 export function TimesPage() {

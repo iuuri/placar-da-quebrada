@@ -161,4 +161,41 @@ describe('App', () => {
     expect(screen.getByLabelText('Gols de Time A')).toHaveTextContent('0')
     expect(tempo()).toBe('25:00')
   })
+
+  it('cronômetro recolhe ao iniciar, reabre pelo botão e abre sozinho no fim do tempo', () => {
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('Minutos'), { target: { value: '0' } })
+    fireEvent.change(screen.getByLabelText('Segundos'), { target: { value: '5' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
+    act(() => vi.advanceTimersByTime(1_000))
+
+    expect(screen.getByRole('region', { name: 'Cronômetro resumido' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Cronômetro' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir cronômetro completo' }))
+    expect(screen.getByRole('region', { name: 'Cronômetro' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Recolher cronômetro' }))
+    expect(screen.getByRole('region', { name: 'Cronômetro resumido' })).toBeInTheDocument()
+
+    act(() => vi.advanceTimersByTime(5_000))
+    expect(screen.getByRole('region', { name: 'Cronômetro' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Dar 1 minuto de acréscimo' }))
+    // continua aberto para dar mais acréscimo, até tocar em Continuar
+    expect(screen.getByRole('region', { name: 'Cronômetro' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    act(() => vi.advanceTimersByTime(1_000))
+    expect(screen.getByRole('region', { name: 'Cronômetro resumido' })).toBeInTheDocument()
+  })
+
+  it('botão Súmula abre a tela com o resumo e a opção de PDF', () => {
+    render(<App />)
+    registrar(/Amarelo/, 'Time B', 'Zé')
+    fireEvent.click(screen.getByRole('button', { name: /Súmula/ }))
+    const tela = screen.getByRole('dialog', { name: 'Súmula do jogo' })
+    expect(within(tela).getByRole('table', { name: 'Resumo por time' })).toBeInTheDocument()
+    expect(within(tela).getByText(/Amarelo · Time B · Zé/)).toBeInTheDocument()
+    expect(within(tela).getByRole('button', { name: /PDF/ })).toBeInTheDocument()
+    fireEvent.click(within(tela).getByRole('button', { name: 'Fechar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
 })

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Anotacoes } from './components/Anotacoes'
 import { Cronometro } from './components/Cronometro'
+import { CronometroMini } from './components/CronometroMini'
 import { Placar } from './components/Placar'
 import { Punicoes } from './components/Punicoes'
 import { ResetarTudo } from './components/ResetarTudo'
-import { Sumula } from './components/Sumula'
+import { BotaoSumula } from './components/Sumula'
 import { useEstado } from './estado'
 import { apitar, manterTelaAcesa } from './lib/recursos'
 import { acabou, acabouAcrescimo, decorridoMs, minutoDeJogo, restantePunicaoMs } from './tempo'
@@ -27,6 +28,14 @@ export function App() {
   const { timer } = estado
   const agora = useAgora(timer.rodando)
   const fim = acabou(timer, agora)
+  const comecou = timer.rodando || decorridoMs(timer, agora) > 0
+  // Depois de iniciar, o cronômetro vira uma barra pequena no rodapé; abre de novo no fim do tempo.
+  const [cronometroAberto, setCronometroAberto] = useState(!comecou)
+  // Regressivo parado com o tempo normal esgotado (acabou, ou já deu acréscimo e falta tocar em Continuar):
+  // mostra o completo para dar acréscimo com calma.
+  const esperandoAcrescimo =
+    timer.modo === 'regressivo' && !timer.rodando && timer.duracaoSeg > 0 && timer.acumuladoMs >= timer.duracaoSeg * 1000
+  const cronometroCompleto = cronometroAberto || fim || !comecou || esperandoAcrescimo
 
   // Regressivo chegou a zero: para o tempo e apita.
   useEffect(() => {
@@ -74,13 +83,27 @@ export function App() {
           <span className="text-[0.7rem] font-bold tracking-wide">placar da</span>
           <span className="text-2xl font-black uppercase">Quebrada</span>
         </h1>
-        <ResetarTudo onResetar={() => despachar({ tipo: 'resetarTudo' })} />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <BotaoSumula estado={estado} />
+          <ResetarTudo
+            onResetar={() => {
+              despachar({ tipo: 'resetarTudo' })
+              setCronometroAberto(true)
+            }}
+          />
+        </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-[minmax(0,1fr)] gap-6 px-4 pb-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <main
+        className={`mx-auto grid w-full max-w-6xl flex-1 grid-cols-[minmax(0,1fr)] gap-6 px-4 lg:grid-cols-[minmax(0,1fr)_22rem] ${cronometroCompleto ? 'pb-10' : 'pb-28'}`}
+      >
         <div className="flex flex-col gap-5">
           <Placar placar={estado.placar} despachar={despachar} />
-          <Cronometro timer={timer} agora={agora} despachar={despachar} />
+          {cronometroCompleto ? (
+            <Cronometro timer={timer} agora={agora} despachar={despachar} onRecolher={() => setCronometroAberto(false)} />
+          ) : (
+            <CronometroMini timer={timer} agora={agora} despachar={despachar} onAbrir={() => setCronometroAberto(true)} />
+          )}
           <Punicoes punicoes={estado.punicoes} placar={estado.placar} timer={timer} agora={agora} despachar={despachar} />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
@@ -91,7 +114,6 @@ export function App() {
             decorridoMs={decorridoMs(timer, agora)}
             despachar={despachar}
           />
-          <Sumula estado={estado} />
         </div>
       </main>
 

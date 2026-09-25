@@ -4,10 +4,11 @@ type Props = {
   titulo: ReactNode
   onFechar: () => void
   children: ReactNode
+  largo?: boolean
 }
 
 // Pop-up simples: foca o item marcado com data-autofocus (ou o primeiro botão), fecha com Esc ou tocando fora, e devolve o foco ao sair.
-export function Dialogo({ titulo, onFechar, children }: Props) {
+export function Dialogo({ titulo, onFechar, children, largo = false }: Props) {
   const idTitulo = useId()
   const caixa = useRef<HTMLDivElement>(null)
   // Guarda a função num ref: o efeito abaixo roda só ao abrir, sem roubar o foco a cada digitação.
@@ -47,7 +48,7 @@ export function Dialogo({ titulo, onFechar, children }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}
-        className="flex max-h-[90dvh] w-full max-w-md flex-col gap-4 overflow-y-auto rounded-md bg-muro p-4 shadow-[6px_6px_0_var(--color-tinta)]"
+        className={`flex max-h-[90dvh] w-full ${largo ? 'max-w-lg' : 'max-w-md'} flex-col gap-4 overflow-y-auto rounded-md bg-muro p-4 shadow-[6px_6px_0_var(--color-tinta)]`}
       >
         <h2 id={idTitulo} className="font-display text-3xl font-black leading-tight">
           {titulo}

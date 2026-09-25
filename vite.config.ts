@@ -13,5 +13,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // Valores falsos: nos testes o Supabase é sempre mockado (o CI não tem .env).
+    env: { VITE_SUPABASE_URL: 'http://supabase.test', VITE_SUPABASE_ANON_KEY: 'chave-de-teste' },
   },
 })

@@ -10,7 +10,7 @@ export function PainelPage() {
       <p className="text-tinta-suave">Olá, {nome}.</p>
       <p className="max-w-prose">
         {isAdmin
-          ? 'Ainda não há partidas. Crie um campeonato em Administração para montar a tabela de jogos.'
+          ? 'Ainda não há partidas. Crie um campeonato em Campeonatos para montar a tabela de jogos.'
           : 'Nenhum jogo escalado para você ainda. Quando o organizador te colocar em uma partida, ela aparece aqui.'}
       </p>
     </section>

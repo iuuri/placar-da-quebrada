@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { Marca } from '@/components/Marca'
 import { Button } from '@/components/ui/button'
 import { sair } from '@/features/auth/api'
@@ -15,6 +15,7 @@ export function PainelLayout() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [saindo, setSaindo] = useState(false)
+  const emUsuarios = useLocation().pathname.startsWith('/admin/usuarios')
 
   async function handleSair() {
     setSaindo(true)
@@ -45,9 +46,17 @@ export function PainelLayout() {
             Meus jogos
           </NavLink>
           {isAdmin ? (
-            <NavLink to="/admin" className={linkClass}>
-              Administração
-            </NavLink>
+            <>
+              <NavLink
+                to="/admin"
+                className={({ isActive }) => linkClass({ isActive: isActive && !emUsuarios })}
+              >
+                Campeonatos
+              </NavLink>
+              <NavLink to="/admin/usuarios" className={linkClass}>
+                Operadores
+              </NavLink>
+            </>
           ) : null}
         </nav>
       </header>

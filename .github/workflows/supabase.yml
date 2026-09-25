@@ -51,7 +51,7 @@ jobs:
       - name: Publicar Edge Functions
         run: |
           if ls supabase/functions/*/index.ts >/dev/null 2>&1; then
-            supabase functions deploy --project-ref "$SUPABASE_PROJECT_ID"
+            supabase functions deploy --use-api --project-ref "$SUPABASE_PROJECT_ID"
           else
             echo "::notice::Nenhuma Edge Function para publicar."
           fi

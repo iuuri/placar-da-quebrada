@@ -3,18 +3,20 @@
 @import '@fontsource/atkinson-hyperlegible/400.css';
 @import '@fontsource/atkinson-hyperlegible/700.css';
 
-/* Tema escuro "placa pintada de várzea": muro (fundo), painel (cartões), tinta (texto claro), placa amarela; vermelho só para cartão/alerta. */
+/* Tema escuro de app de jogo ao vivo. Profundidade por camadas de superfície (muro → painel → painel-alto),
+   sem sombras duras; o amarelo da placa é o único destaque forte. Vermelho só para cartão/alerta. */
 @theme {
-  --color-muro: #0c1222;
-  --color-painel: #172036;
-  --color-muro-escuro: #2b3753;
-  --color-tinta: #eef1f4;
-  --color-tinta-suave: #9ba6bd;
+  --color-muro: #0a0f1d;
+  --color-painel: #121a2d;
+  --color-painel-alto: #1b2540;
+  --color-muro-escuro: #25304b;
+  --color-tinta: #f2f4f8;
+  --color-tinta-suave: #8f9bb5;
   --color-placa: #ffc928;
-  --color-placa-escura: #e0a800;
-  --color-gramado: #1f7a3a;
-  --color-cartao: #d62839;
-  --color-laranja: #f77f00;
+  --color-placa-escura: #e6b31e;
+  --color-gramado: #2fbf71;
+  --color-cartao: #f04452;
+  --color-laranja: #ff8a1f;
 
   --font-display: 'Big Shoulders Display Variable', 'Arial Narrow', sans-serif;
   --font-sans: 'Atkinson Hyperlegible', system-ui, sans-serif;
@@ -53,4 +55,39 @@
 
 .alarme {
   animation: piscar 0.8s steps(1) infinite;
+}
+
+/* Número do placar "pula" quando muda (resposta ao toque) */
+@keyframes pulo {
+  from {
+    transform: scale(1.18);
+    color: var(--color-placa);
+  }
+}
+
+.pulo {
+  animation: pulo 0.35s ease-out;
+}
+
+/* Pop-up sobe de baixo (folha) */
+@keyframes subir {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+.subir {
+  animation: subir 0.2s ease-out;
+}
+
+/* Ponto "ao vivo" do cronômetro resumido enquanto o tempo corre */
+@keyframes ao-vivo {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.ao-vivo {
+  animation: ao-vivo 1.6s ease-in-out infinite;
 }

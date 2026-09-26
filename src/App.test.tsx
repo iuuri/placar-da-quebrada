@@ -96,7 +96,7 @@ describe('App', () => {
 
   it('cancelar o pop-up não registra nada', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: /Gol$/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Troca' }))
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.queryByRole('list', { name: /Anotações/ })).not.toBeInTheDocument()
@@ -105,17 +105,17 @@ describe('App', () => {
   it('anotação geral pode ficar sem time; editar troca texto e time; apagar pede confirmação', () => {
     render(<App />)
     registrar(/Anotar/, 'Geral (sem time)', 'chuva')
-    registrar(/Gol$/, 'Time A', 'segunda')
+    registrar(/Troca/, 'Time A', 'segunda')
     expect(blocos()[0]).toHaveTextContent('segunda')
     expect(blocos()[1]).toHaveTextContent('chuva')
 
-    const gol = blocos()[0]
-    fireEvent.click(within(gol).getByRole('button', { name: 'Editar' }))
-    fireEvent.change(within(gol).getByLabelText('Texto da anotação'), { target: { value: 'corrigida' } })
-    fireEvent.click(within(gol).getByRole('radio', { name: 'Time B' }))
-    fireEvent.click(within(gol).getByRole('button', { name: 'Salvar' }))
-    expect(gol).toHaveTextContent('corrigida')
-    expect(gol).toHaveTextContent('Time B')
+    const troca = blocos()[0]
+    fireEvent.click(within(troca).getByRole('button', { name: 'Editar' }))
+    fireEvent.change(within(troca).getByLabelText('Texto da anotação'), { target: { value: 'corrigida' } })
+    fireEvent.click(within(troca).getByRole('radio', { name: 'Time B' }))
+    fireEvent.click(within(troca).getByRole('button', { name: 'Salvar' }))
+    expect(troca).toHaveTextContent('corrigida')
+    expect(troca).toHaveTextContent('Time B')
 
     fireEvent.click(within(blocos()[1]).getByRole('button', { name: 'Apagar' }))
     fireEvent.click(within(blocos()[1]).getByRole('button', { name: 'Sim, apagar' }))
@@ -147,11 +147,52 @@ describe('App', () => {
     expect(blocos()[0]).toHaveTextContent('Tião') // o registro continua nas anotações
   })
 
+  // Gol pelo placar: soma na hora e o pop-up só pede o jogador (opcional).
+  function marcarGol(time: string, jogador = '') {
+    fireEvent.click(screen.getByRole('button', { name: `Gol de ${time}` }))
+    const dialogo = screen.getByRole('dialog', { name: new RegExp(`Gol de ${time}`) })
+    if (jogador) fireEvent.change(within(dialogo).getByRole('textbox'), { target: { value: jogador } })
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Salvar gol' }))
+  }
+
+  it('não tem botão de gol nos registros: o gol é marcado no placar e pede o jogador', () => {
+    render(<App />)
+    expect(screen.queryByRole('button', { name: 'Gol' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
+    act(() => vi.advanceTimersByTime(9 * 60_000 + 30_000))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Gol de Time B' }))
+    // o placar já mudou antes de salvar
+    expect(screen.getByLabelText('Gols de Time B')).toHaveTextContent('1')
+    const dialogo = screen.getByRole('dialog', { name: /Gol de Time B aos 10'/ })
+    expect(within(dialogo).getByRole('button', { name: 'Salvar gol' })).toHaveFocus()
+    fireEvent.change(within(dialogo).getByRole('textbox'), { target: { value: 'Zé' } })
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Salvar gol' }))
+    expect(blocos()[0]).toHaveTextContent("10'")
+    expect(blocos()[0]).toHaveTextContent('Gol')
+    expect(blocos()[0]).toHaveTextContent('Time B')
+    expect(blocos()[0]).toHaveTextContent('Zé')
+
+    // sem nome também vale; desfazer tira o gol e o registro
+    marcarGol('Time A')
+    expect(blocos()).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Gol de Time A' }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Desfazer gol' }))
+    expect(screen.getByLabelText('Gols de Time A')).toHaveTextContent('1')
+    expect(blocos()).toHaveLength(2)
+
+    // tirar gol no placar apaga o registro mais recente daquele time
+    fireEvent.click(screen.getByRole('button', { name: 'Tirar um gol de Time B' }))
+    expect(screen.getByLabelText('Gols de Time B')).toHaveTextContent('0')
+    expect(blocos()).toHaveLength(1)
+    expect(blocos()[0]).toHaveTextContent('Time A')
+  })
+
   it('marca gols e reseta tudo com confirmação', () => {
     render(<App />)
     fireEvent.change(screen.getByLabelText('Nome do primeiro time'), { target: { value: 'Unidos' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Gol de Unidos' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Gol de Unidos' }))
+    marcarGol('Unidos')
+    marcarGol('Unidos')
     expect(screen.getByLabelText('Gols de Unidos')).toHaveTextContent('2')
     registrar(/Amarelo/, 'Unidos')
 

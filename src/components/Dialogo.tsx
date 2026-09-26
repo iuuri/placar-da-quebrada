@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 type Props = {
   titulo: ReactNode
@@ -38,7 +39,7 @@ export function Dialogo({ titulo, onFechar, children, largo = false }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onFechar()
       }}
@@ -48,9 +49,14 @@ export function Dialogo({ titulo, onFechar, children, largo = false }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}
-        className={`flex max-h-[90dvh] w-full ${largo ? 'max-w-lg' : 'max-w-md'} flex-col gap-4 overflow-y-auto rounded-md border-2 border-muro-escuro bg-painel p-4 shadow-[6px_6px_0_var(--color-placa)]`}
+        className={cn(
+          'subir flex max-h-[92dvh] w-full flex-col gap-4 overflow-y-auto rounded-t-3xl bg-painel px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] ring-1 ring-white/8 sm:rounded-3xl sm:pt-5',
+          largo ? 'sm:max-w-lg' : 'sm:max-w-md',
+        )}
       >
-        <h2 id={idTitulo} className="font-display text-3xl font-black leading-tight">
+        {/* alça de folha (bottom sheet) no celular */}
+        <span aria-hidden className="mx-auto h-1.5 w-10 shrink-0 rounded-full bg-muro-escuro sm:hidden" />
+        <h2 id={idTitulo} className="text-xl font-bold leading-tight">
           {titulo}
         </h2>
         {children}

@@ -8,6 +8,7 @@ import { Punicoes } from './components/Punicoes'
 import { ResetarTudo } from './components/ResetarTudo'
 import { BotaoSumula } from './components/Sumula'
 import { useEstado } from './estado'
+import { cn } from './lib/utils'
 import { abrirFlutuante, suportaFlutuante } from './lib/flutuante'
 import { apitar, manterTelaAcesa } from './lib/recursos'
 import { acabou, acabouAcrescimo, decorridoMs, minutoDeJogo, restantePunicaoMs } from './tempo'
@@ -112,11 +113,15 @@ export function App() {
   return (
     <div className="flex min-h-dvh flex-col">
       {/* Topo fixo: logo e, depois de iniciar, o cronômetro resumido ao lado. */}
-      <header className="sticky top-0 z-40 bg-muro/90 backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-2">
-          <h1 className="inline-flex shrink-0 -rotate-1 flex-col bg-placa px-2.5 py-1 font-display leading-none text-muro shadow-[3px_3px_0_var(--color-placa-escura)] min-[360px]:px-3">
-            <span className="text-[0.65rem] font-bold tracking-wide">placar da</span>
-            <span className="text-lg font-black uppercase min-[360px]:text-2xl">Quebrada</span>
+      <header className="sticky top-0 z-40 bg-muro/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+        <div className="mx-auto flex min-h-16 w-full max-w-6xl items-center justify-between gap-2 px-4 py-2">
+          <h1 className="flex shrink-0 items-center gap-2.5">
+            <img src="/favicon.svg" alt="" width={40} height={40} className="size-10 rounded-xl" />
+            {/* Com o cronômetro resumido no topo, em tela bem estreita, o nome fica só para leitores de tela. */}
+            <span className={cn('flex flex-col leading-none', !cronometroCompleto && 'max-[419px]:sr-only')}>
+              <span className="text-xs font-bold text-tinta-suave">Placar da</span>
+              <span className="font-display text-2xl font-black">Quebrada</span>
+            </span>
           </h1>
           {cronometroCompleto ? null : (
             <CronometroMini timer={timer} agora={agora} despachar={despachar} onAbrir={() => setCronometroAberto(true)} />
@@ -124,9 +129,9 @@ export function App() {
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-[minmax(0,1fr)] gap-6 px-4 pt-2 pb-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="flex flex-col gap-5">
-          <Placar placar={estado.placar} despachar={despachar} />
+      <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-[minmax(0,1fr)] gap-5 px-4 pt-2 pb-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="flex flex-col gap-4">
+          <Placar placar={estado.placar} minuto={minutoDeJogo(timer, agora)} despachar={despachar} />
           {cronometroCompleto ? (
             <Cronometro
               timer={timer}
@@ -150,10 +155,11 @@ export function App() {
       </main>
 
       {/* Ações de fim de jogo ficam no fim da página, longe dos botões do dia a dia. */}
-      <footer className="border-t-2 border-muro-escuro px-4 pt-4 pb-6">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3">
+      <footer className="border-t border-muro-escuro px-4 pt-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <BotaoSumula estado={estado} />
+            <InstalarApp />
             <ResetarTudo
               onResetar={() => {
                 despachar({ tipo: 'resetarTudo' })
@@ -161,7 +167,6 @@ export function App() {
               }}
             />
           </div>
-          <InstalarApp />
           <p className="text-center text-xs text-tinta-suave">
             Os dados ficam salvos só neste aparelho. “Resetar tudo” apaga placar, tempo e anotações.
           </p>

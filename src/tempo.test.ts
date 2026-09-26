@@ -91,7 +91,7 @@ describe('cronômetro por timestamps', () => {
 
 describe('reducer', () => {
   it('não deixa gol negativo e limita nome', () => {
-    let e = reducer(ESTADO_INICIAL, { tipo: 'gol', lado: 'casa', delta: -1 })
+    let e = reducer(ESTADO_INICIAL, { tipo: 'tirarGol', lado: 'casa' })
     expect(e.placar.casa.gols).toBe(0)
     e = reducer(e, { tipo: 'nomeTime', lado: 'visitante', nome: 'x'.repeat(50) })
     expect(e.placar.visitante.nome).toHaveLength(30)
@@ -115,9 +115,35 @@ describe('reducer', () => {
   })
 
   it('resetar tudo volta ao estado inicial', () => {
-    let e = reducer(ESTADO_INICIAL, { tipo: 'gol', lado: 'casa', delta: 1 })
+    let e = reducer(ESTADO_INICIAL, { tipo: 'marcarGol', lado: 'casa', id: 'g', minuto: 0 })
     e = reducer(e, { tipo: 'adicionarNota', nota: { id: '1', tipo: 'nota', minuto: 3, texto: 'oi', lado: null }, decorridoMs: 0 })
     expect(reducer(e, { tipo: 'resetarTudo' })).toEqual(ESTADO_INICIAL)
+  })
+})
+
+describe('gols', () => {
+  it('gol pelo placar soma e cria o registro; editar põe o jogador sem trocar o time', () => {
+    let e = reducer(ESTADO_INICIAL, { tipo: 'marcarGol', lado: 'visitante', id: 'g1', minuto: 7 })
+    expect(e.placar.visitante.gols).toBe(1)
+    expect(e.notas[0]).toEqual({ id: 'g1', tipo: 'gol', minuto: 7, texto: '', lado: 'visitante' })
+    e = reducer(e, { tipo: 'editarNota', id: 'g1', texto: ' Zé ', lado: 'casa' })
+    expect(e.notas[0]).toMatchObject({ texto: 'Zé', lado: 'visitante' })
+  })
+
+  it('tirar gol apaga o registro de gol mais recente daquele time', () => {
+    let e = reducer(ESTADO_INICIAL, { tipo: 'marcarGol', lado: 'casa', id: 'a', minuto: 1 })
+    e = reducer(e, { tipo: 'marcarGol', lado: 'visitante', id: 'b', minuto: 2 })
+    e = reducer(e, { tipo: 'marcarGol', lado: 'casa', id: 'c', minuto: 3 })
+    e = reducer(e, { tipo: 'tirarGol', lado: 'casa' })
+    expect(e.placar.casa.gols).toBe(1)
+    expect(e.notas.map((n) => n.id)).toEqual(['b', 'a'])
+  })
+
+  it('apagar o registro de um gol também tira do placar', () => {
+    let e = reducer(ESTADO_INICIAL, { tipo: 'marcarGol', lado: 'casa', id: 'a', minuto: 1 })
+    e = reducer(e, { tipo: 'removerNota', id: 'a' })
+    expect(e.placar.casa.gols).toBe(0)
+    expect(e.notas).toEqual([])
   })
 })
 

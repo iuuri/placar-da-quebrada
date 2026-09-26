@@ -3,8 +3,10 @@ import type { Estado } from '@/estado'
 import { compartilharOuBaixar, contarPorTime, gerarSumulaPdf, nomeDoArquivo } from '@/lib/sumula'
 import { decorridoMs, formatar } from '@/tempo'
 import { ORDEM_TIPOS, TIPOS } from '@/tipos'
+import { cn } from '@/lib/utils'
 import { Botao } from './Botao'
 import { Dialogo } from './Dialogo'
+import { Icone, IconeTipo } from './Icone'
 
 type Status = { tipo: 'ok' | 'erro'; texto: string } | null
 
@@ -13,8 +15,9 @@ export function BotaoSumula({ estado }: { estado: Estado }) {
   const [aberta, setAberta] = useState(false)
   return (
     <>
-      <Botao variante="contorno" className="min-h-11 px-3" onClick={() => setAberta(true)}>
-        📄 Súmula
+      <Botao variante="contorno" className="min-h-12 px-4" onClick={() => setAberta(true)}>
+        <Icone nome="documento" className="size-[1.1rem]" />
+        Súmula
       </Botao>
       {aberta ? <TelaSumula estado={estado} onFechar={() => setAberta(false)} /> : null}
     </>
@@ -55,17 +58,17 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
 
   return (
     <Dialogo titulo="Súmula do jogo" onFechar={onFechar} largo>
-      <p className="-mt-2 text-center font-display text-3xl font-black leading-tight">
+      <p className="rounded-2xl bg-muro px-3 py-4 text-center font-display text-3xl font-black leading-tight">
         {nomeA} {casa.gols} × {visitante.gols} {nomeB}
       </p>
-      <p className="-mt-3 text-center text-sm text-tinta-suave">
+      <p className="-mt-2 text-center text-sm text-tinta-suave">
         Tempo jogado: {formatar(decorridoMs(estado.timer, abertaEm))}
       </p>
 
       <table className="w-full table-fixed text-sm">
         <caption className="sr-only">Resumo por time</caption>
         <thead>
-          <tr className="border-b-2 border-muro-escuro">
+          <tr className="border-b border-muro-escuro">
             <th scope="col" className="w-[46%] pb-1 text-left font-normal text-tinta-suave">
               Resumo
             </th>
@@ -88,7 +91,10 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
           {ORDEM_TIPOS.filter((t) => t !== 'nota').map((tipo) => (
             <tr key={tipo}>
               <th scope="row" className="truncate py-0.5 text-left font-normal">
-                <span aria-hidden>{TIPOS[tipo].emoji}</span> {TIPOS[tipo].plural}
+                <span className="inline-flex items-center gap-2">
+                  <IconeTipo tipo={tipo} className={cn('size-4', TIPOS[tipo].tom)} />
+                  {TIPOS[tipo].plural}
+                </span>
               </th>
               <td className="text-center font-bold">{c.casa[tipo]}</td>
               <td className="text-center font-bold">{c.visitante[tipo]}</td>
@@ -98,16 +104,17 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
       </table>
 
       <div className="flex flex-col gap-1">
-        <h3 className="font-bold">Registros ({registros.length})</h3>
+        <h3 className="text-sm font-bold">Registros ({registros.length})</h3>
         {registros.length === 0 ? (
           <p className="text-sm text-tinta-suave">Nenhum registro ainda.</p>
         ) : (
-          <ol className="flex max-h-48 flex-col divide-y divide-muro-escuro overflow-y-auto rounded-md bg-muro px-2 text-sm">
+          <ol className="flex max-h-48 flex-col divide-y divide-muro-escuro overflow-y-auto rounded-2xl bg-muro px-3 text-sm">
             {registros.map((n) => (
-              <li key={n.id} className="flex gap-2 py-1.5">
+              <li key={n.id} className="flex items-center gap-2 py-2">
                 <span className="w-8 shrink-0 font-bold tabular-nums">{n.minuto}'</span>
+                <IconeTipo tipo={n.tipo} className={cn('size-4', TIPOS[n.tipo].tom)} />
                 <span className="min-w-0 flex-1 truncate">
-                  <span aria-hidden>{TIPOS[n.tipo].emoji}</span> {TIPOS[n.tipo].rotulo}
+                  {TIPOS[n.tipo].rotulo}
                   {n.lado ? ` · ${n.lado === 'casa' ? nomeA : nomeB}` : ''}
                   {n.texto ? ` · ${n.texto}` : ''}
                 </span>
@@ -118,7 +125,8 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
       </div>
 
       <Botao className="min-h-14 text-lg" disabled={gerando} onClick={gerar} data-autofocus>
-        {gerando ? 'Gerando PDF…' : compartilhar ? '📤 Compartilhar PDF' : '⬇️ Baixar PDF'}
+        <Icone nome={compartilhar ? 'compartilhar' : 'instalar'} />
+        {gerando ? 'Gerando PDF…' : compartilhar ? 'Compartilhar PDF' : 'Baixar PDF'}
       </Botao>
       <p className="-mt-2 text-center text-xs text-tinta-suave">PDF protegido contra edição, pronto para o WhatsApp.</p>
       {status ? (

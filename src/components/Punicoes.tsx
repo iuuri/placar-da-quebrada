@@ -2,6 +2,7 @@ import type { Acao, Estado } from '@/estado'
 import { cn } from '@/lib/utils'
 import { formatar, restantePunicaoMs, type EstadoTimer } from '@/tempo'
 import { Botao } from './Botao'
+import { Icone } from './Icone'
 
 type Props = {
   punicoes: Estado['punicoes']
@@ -16,10 +17,11 @@ export function Punicoes({ punicoes, placar, timer, agora, despachar }: Props) {
   if (punicoes.length === 0) return null
 
   return (
-    <section aria-labelledby="titulo-punicoes" className="flex flex-col gap-2 rounded-md border-2 border-laranja bg-painel p-3">
+    <section aria-labelledby="titulo-punicoes" className="flex flex-col gap-3 rounded-3xl bg-painel p-4 ring-1 ring-laranja/40">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="titulo-punicoes" className="font-display text-2xl font-bold">
-          ⏱️ Punições
+        <h2 id="titulo-punicoes" className="flex items-center gap-2 text-xl font-bold">
+          <Icone nome="cronometro" className="text-laranja" />
+          Punições
         </h2>
         {!timer.rodando ? <span className="text-sm text-tinta-suave">Paradas: o jogo está pausado</span> : null}
       </div>
@@ -32,14 +34,14 @@ export function Punicoes({ punicoes, placar, timer, agora, despachar }: Props) {
             <li
               key={p.id}
               className={cn(
-                'flex items-center gap-3 rounded-md p-2',
-                cumprida ? 'alarme bg-gramado text-white' : 'bg-muro',
+                'flex items-center gap-3 rounded-2xl p-2.5',
+                cumprida ? 'alarme bg-gramado text-muro' : 'bg-muro',
               )}
             >
               <span
                 role="timer"
                 aria-label={`Tempo restante da punição: ${formatar(restante, true)}`}
-                className="w-20 shrink-0 text-center font-display text-4xl font-black leading-none tabular-nums"
+                className="w-[5.25rem] shrink-0 text-center font-display text-4xl font-black leading-none tabular-nums"
               >
                 {formatar(restante, true)}
               </span>

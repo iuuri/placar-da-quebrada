@@ -51,13 +51,24 @@ export type Acao =
   | { tipo: 'definirDuracao'; segundos: number }
   | { tipo: 'acrescimo'; segundos: number }
   | { tipo: 'nomeTime'; lado: Lado; nome: string }
-  | { tipo: 'gol'; lado: Lado; delta: 1 | -1 }
+  // Gol pelo placar: soma no placar e já cria o registro do gol (o nome do jogador entra depois, editando).
+  | { tipo: 'marcarGol'; lado: Lado; id: string; minuto: number }
+  // Tirar gol: diminui o placar e apaga o registro de gol mais recente daquele time.
+  | { tipo: 'tirarGol'; lado: Lado }
   | { tipo: 'falta'; lado: Lado; delta: 1 | -1 }
   | { tipo: 'adicionarNota'; nota: Nota; decorridoMs: number }
   | { tipo: 'editarNota'; id: string; texto: string; lado: Lado | null }
   | { tipo: 'removerNota'; id: string }
   | { tipo: 'encerrarPunicao'; id: string }
   | { tipo: 'resetarTudo' }
+
+function somarGols(estado: Estado, lado: Lado, delta: number): Estado {
+  const atual = estado.placar[lado]
+  return {
+    ...estado,
+    placar: { ...estado.placar, [lado]: { ...atual, gols: Math.max(0, Math.min(99, atual.gols + delta)) } },
+  }
+}
 
 export function reducer(estado: Estado, acao: Acao): Estado {
   switch (acao.tipo) {
@@ -84,11 +95,17 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         ...estado,
         placar: { ...estado.placar, [acao.lado]: { ...estado.placar[acao.lado], nome: acao.nome.slice(0, 30) } },
       }
-    case 'gol': {
-      const atual = estado.placar[acao.lado]
+    case 'marcarGol': {
+      if (estado.placar[acao.lado].gols >= 99) return estado
+      const nota: Nota = { id: acao.id, tipo: 'gol', minuto: acao.minuto, texto: '', lado: acao.lado }
+      return { ...somarGols(estado, acao.lado, 1), notas: [nota, ...estado.notas] }
+    }
+    case 'tirarGol': {
+      if (estado.placar[acao.lado].gols === 0) return estado
+      const ultimo = estado.notas.find((n) => n.tipo === 'gol' && n.lado === acao.lado)
       return {
-        ...estado,
-        placar: { ...estado.placar, [acao.lado]: { ...atual, gols: Math.max(0, Math.min(99, atual.gols + acao.delta)) } },
+        ...somarGols(estado, acao.lado, -1),
+        notas: ultimo ? estado.notas.filter((n) => n.id !== ultimo.id) : estado.notas,
       }
     }
     case 'falta': {
@@ -115,19 +132,24 @@ export function reducer(estado: Estado, acao: Acao): Estado {
       const texto = acao.texto.trim().slice(0, MAX_TEXTO_NOTA)
       const alvo = estado.notas.find((n) => n.id === acao.id)
       if (!alvo) return estado
-      const lado = alvo.tipo === 'nota' ? acao.lado : (acao.lado ?? alvo.lado)
+      // Gol não troca de time pela edição: o placar já foi somado para aquele time.
+      const lado = alvo.tipo === 'nota' ? acao.lado : alvo.tipo === 'gol' ? alvo.lado : (acao.lado ?? alvo.lado)
       return {
         ...estado,
         notas: estado.notas.map((n) => (n.id === acao.id ? { ...n, texto, lado } : n)),
         punicoes: estado.punicoes.map((p) => (p.id === acao.id && lado ? { ...p, texto, lado } : p)),
       }
     }
-    case 'removerNota':
+    case 'removerNota': {
+      // Apagar o registro de um gol também tira o gol do placar.
+      const alvo = estado.notas.find((n) => n.id === acao.id)
+      const base = alvo?.tipo === 'gol' && alvo.lado ? somarGols(estado, alvo.lado, -1) : estado
       return {
-        ...estado,
+        ...base,
         notas: estado.notas.filter((n) => n.id !== acao.id),
         punicoes: estado.punicoes.filter((p) => p.id !== acao.id),
       }
+    }
     case 'encerrarPunicao':
       return { ...estado, punicoes: estado.punicoes.filter((p) => p.id !== acao.id) }
     case 'resetarTudo':

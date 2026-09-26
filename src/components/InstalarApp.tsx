@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { abertoComoApp, ehIphone, instalar, useInstalou, usePedidoInstalar } from '@/lib/instalar'
 import { Botao } from './Botao'
 import { Dialogo } from './Dialogo'
+import { Icone } from './Icone'
 
 // Botão "Instalar app" do fim da página. Some quando a página já está aberta como app.
 export function InstalarApp() {
@@ -11,19 +12,20 @@ export function InstalarApp() {
   const [comoApp] = useState(abertoComoApp)
 
   if (comoApp) return null
-  if (instalou) return <p className="text-sm font-bold text-placa">✅ App instalado! Procure o ícone do Placar no aparelho.</p>
+  if (instalou) return <p className="text-sm font-bold text-gramado">App instalado! Procure o ícone do Placar no aparelho.</p>
 
   return (
     <>
       <Botao
         variante="contorno"
-        className="min-h-11 px-3"
+        className="min-h-12 px-4"
         onClick={async () => {
           if (pedido) await instalar()
           else setAjuda(true)
         }}
       >
-        📲 Instalar app
+        <Icone nome="instalar" className="size-[1.1rem]" />
+        Instalar app
       </Botao>
       {ajuda ? <ComoInstalar iphone={ehIphone()} onFechar={() => setAjuda(false)} /> : null}
     </>
@@ -32,7 +34,7 @@ export function InstalarApp() {
 
 function ComoInstalar({ iphone, onFechar }: { iphone: boolean; onFechar: () => void }) {
   return (
-    <Dialogo titulo={iphone ? '📲 Instalar no iPhone' : '📲 Instalar o app'} onFechar={onFechar}>
+    <Dialogo titulo={iphone ? 'Instalar no iPhone' : 'Instalar o app'} onFechar={onFechar}>
       {iphone ? (
         <>
           <p>No iPhone a instalação é feita pelo próprio navegador, em poucos toques:</p>
@@ -42,7 +44,7 @@ function ComoInstalar({ iphone, onFechar }: { iphone: boolean; onFechar: () => v
             </li>
             <li>
               Toque em <strong>Compartilhar</strong> (o quadrado com a seta para cima{' '}
-              <span aria-hidden>⬆️</span>), na barra do Safari.
+              <Icone nome="compartilhar" className="inline size-4 align-[-3px]" />), na barra do Safari.
             </li>
             <li>
               Role a lista e toque em <strong>Adicionar à Tela de Início</strong>.

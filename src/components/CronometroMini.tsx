@@ -1,6 +1,7 @@
 import type { Acao } from '@/estado'
 import { prepararSom } from '@/lib/recursos'
 import { cn } from '@/lib/utils'
+import { Icone } from './Icone'
 import { alemDoTempoMs, exibidoMs, formatar, type EstadoTimer } from '@/tempo'
 
 type Props = {
@@ -23,13 +24,18 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
         ? `+${formatar(alem)} acrésc.`
         : 'Progressivo'
 
+  const botao = 'grid size-10 shrink-0 place-items-center rounded-full'
   return (
     <section
       aria-label="Cronômetro resumido"
-      className="flex min-w-0 items-center gap-1.5 rounded-lg border border-muro-escuro bg-painel/95 py-1 pr-1 pl-2.5 text-tinta shadow-[0_4px_14px_rgb(0_0_0/0.5)] min-[360px]:gap-2"
+      className="flex min-w-0 items-center gap-1.5 rounded-full bg-painel-alto/90 py-1 pr-1 pl-3.5 ring-1 ring-white/8 min-[360px]:gap-2"
     >
+      <span
+        aria-hidden
+        className={cn('size-2 shrink-0 rounded-full', timer.rodando ? 'ao-vivo bg-gramado' : 'bg-tinta-suave')}
+      />
       <div role="timer" aria-label="Tempo" className="shrink-0">
-        <p className="font-display text-3xl font-black leading-none tabular-nums">
+        <p className="font-display text-[1.7rem] font-black leading-none tabular-nums">
           {formatar(exibidoMs(timer, agora), timer.modo === 'regressivo')}
         </p>
         <p
@@ -44,21 +50,25 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
       {timer.rodando ? (
         <button
           type="button"
+          aria-label="Pausar"
+          title="Pausar"
           onClick={() => despachar({ tipo: 'pausar', agora: Date.now() })}
-          className="min-h-10 shrink-0 rounded-md bg-placa px-2 text-sm font-bold text-muro min-[360px]:px-3"
+          className={cn(botao, 'bg-placa text-muro')}
         >
-          Pausar
+          <Icone nome="pausa" className="size-4" />
         </button>
       ) : (
         <button
           type="button"
+          aria-label="Continuar"
+          title="Continuar"
           onClick={() => {
             prepararSom()
             despachar({ tipo: 'iniciar', agora: Date.now() })
           }}
-          className="min-h-10 shrink-0 rounded-md bg-placa px-2 text-sm font-bold text-muro min-[360px]:px-3"
+          className={cn(botao, 'bg-placa text-muro')}
         >
-          Continuar
+          <Icone nome="play" className="size-4" />
         </button>
       )}
       <button
@@ -66,9 +76,9 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
         onClick={onAbrir}
         aria-label="Abrir cronômetro completo"
         title="Abrir cronômetro completo"
-        className="min-h-10 min-w-9 shrink-0 rounded-md border-2 border-tinta/50 text-lg font-bold leading-none"
+        className={cn(botao, 'hover:bg-white/10')}
       >
-        ▾
+        <Icone nome="expandir" />
       </button>
     </section>
   )

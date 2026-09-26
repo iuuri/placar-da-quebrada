@@ -17,8 +17,8 @@ describe('instalar app', () => {
   it('no iPhone mostra o passo a passo do Safari', async () => {
     vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(UA_IPHONE)
     render(<InstalarApp />)
-    fireEvent.click(screen.getByRole('button', { name: '📲 Instalar app' }))
-    expect(screen.getByRole('dialog', { name: '📲 Instalar no iPhone' })).toHaveTextContent('Adicionar à Tela de Início')
+    fireEvent.click(screen.getByRole('button', { name: 'Instalar app' }))
+    expect(screen.getByRole('dialog', { name: 'Instalar no iPhone' })).toHaveTextContent('Adicionar à Tela de Início')
     fireEvent.click(screen.getByRole('button', { name: 'Entendi' }))
     expect(screen.queryByRole('dialog')).toBeNull()
   })
@@ -35,7 +35,7 @@ describe('instalar app', () => {
     })
     expect(evento.defaultPrevented).toBe(true)
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: '📲 Instalar app' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Instalar app' }))
     })
     expect(prompt).toHaveBeenCalledTimes(1)
     expect(screen.queryByRole('dialog')).toBeNull()

@@ -12,6 +12,7 @@ import {
   type Modo,
 } from '@/tempo'
 import { Botao } from './Botao'
+import { Icone } from './Icone'
 
 type Props = {
   timer: EstadoTimer
@@ -33,7 +34,7 @@ const OPCOES_ACRESCIMO = [1, 2, 3, 5]
 function Situacao({ timer, agora }: { timer: EstadoTimer; agora: number }) {
   const acrescimo = timer.acrescimoSeg * 1000
   if (acabou(timer, agora)) return <>Fim do tempo! Dê acréscimo ou zere o tempo.</>
-  if (acabouAcrescimo(timer, agora)) return <span className="rounded bg-cartao px-2 text-white">Fim do acréscimo!</span>
+  if (acabouAcrescimo(timer, agora)) return <span className="rounded-full bg-cartao px-3 py-0.5 text-white">Fim do acréscimo!</span>
   if (timer.modo === 'regressivo') {
     return acrescimo > 0 ? <span className="text-placa">Com acréscimo de +{formatar(acrescimo)}</span> : null
   }
@@ -63,14 +64,16 @@ function Acrescimo({ timer, despachar, destaque }: { timer: EstadoTimer; despach
     <div
       role="group"
       aria-label="Acréscimo"
-      className={cn('flex flex-col gap-2 rounded-md p-2', destaque ? 'bg-placa/20 ring-2 ring-placa' : 'bg-white/10')}
+      className={cn('flex flex-col gap-2 rounded-2xl bg-muro p-3', destaque && 'ring-2 ring-placa')}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-bold">Acréscimo{minutos > 0 ? `: ${minutos}'` : ''}</span>
+      <div className="flex min-h-8 items-center justify-between gap-2">
+        <span className="text-sm font-bold">
+          Acréscimo{minutos > 0 ? <span className="text-placa">: +{minutos}'</span> : ''}
+        </span>
         {timer.acrescimoSeg > 0 ? (
           <button
             type="button"
-            className="min-h-10 px-2 text-sm underline underline-offset-4"
+            className="min-h-8 rounded-full px-3 text-sm text-tinta-suave hover:bg-white/8 hover:text-tinta"
             onClick={() => despachar({ tipo: 'acrescimo', segundos: -timer.acrescimoSeg })}
           >
             Tirar acréscimo
@@ -84,7 +87,7 @@ function Acrescimo({ timer, despachar, destaque }: { timer: EstadoTimer; despach
             type="button"
             aria-label={`Dar ${min} minuto${min > 1 ? 's' : ''} de acréscimo`}
             onClick={() => despachar({ tipo: 'acrescimo', segundos: min * 60 })}
-            className="min-h-12 rounded-md bg-tinta font-display text-2xl font-black text-muro hover:bg-placa"
+            className="min-h-12 rounded-xl bg-painel-alto font-display text-2xl font-black transition-[background-color,transform] hover:bg-placa hover:text-muro active:scale-[0.95]"
           >
             +{min}'
           </button>
@@ -108,17 +111,21 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
   }
 
   return (
-    <section aria-label="Cronômetro" className="flex flex-col gap-4 rounded-md border-2 border-muro-escuro bg-painel p-4 text-tinta sm:p-5">
+    <section aria-label="Cronômetro" className="flex flex-col gap-4 rounded-3xl bg-painel p-4 sm:p-5">
       {(comecou && !fim) || flutuante ? (
-        <div className="-mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="-mb-1 flex items-center justify-between gap-2">
           {flutuante ? (
             <button
               type="button"
               onClick={flutuante.alternar}
               aria-pressed={flutuante.aberta}
-              className="min-h-10 rounded-md border-2 border-tinta/60 px-2.5 text-sm font-bold"
+              className={cn(
+                'inline-flex min-h-10 items-center gap-2 rounded-full px-3.5 text-sm font-bold',
+                flutuante.aberta ? 'bg-tinta text-muro' : 'bg-painel-alto text-tinta hover:bg-white/12',
+              )}
             >
-              {flutuante.aberta ? '📺 Fechar janela flutuante' : '📺 Janela flutuante'}
+              <Icone nome="janela" className="size-4" />
+              {flutuante.aberta ? 'Fechar janela flutuante' : 'Janela flutuante'}
             </button>
           ) : (
             <span />
@@ -128,19 +135,20 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
               type="button"
               onClick={onRecolher}
               aria-label="Recolher cronômetro"
-              className="min-h-10 text-sm font-bold underline underline-offset-4"
+              title="Recolher cronômetro"
+              className="grid size-10 place-items-center rounded-full bg-painel-alto hover:bg-white/12"
             >
-              Recolher ▴
+              <Icone nome="recolher" />
             </button>
           ) : null}
         </div>
       ) : null}
       {flutuante?.erro ? (
-        <p role="alert" className="-mb-2 rounded bg-cartao px-2 py-1 text-sm font-bold text-white">
+        <p role="alert" className="rounded-xl bg-cartao/15 px-3 py-2 text-sm font-bold text-cartao">
           {flutuante.erro}
         </p>
       ) : null}
-      <div role="radiogroup" aria-label="Tipo de contagem" className="grid grid-cols-2 gap-1 rounded-md bg-white/10 p-1">
+      <div role="radiogroup" aria-label="Tipo de contagem" className="grid grid-cols-2 gap-1 rounded-xl bg-muro p-1">
         {MODOS.map((m) => (
           <button
             key={m.valor}
@@ -150,8 +158,8 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
             disabled={!podeConfigurar}
             onClick={() => despachar({ tipo: 'definirModo', modo: m.valor })}
             className={cn(
-              'min-h-11 rounded font-bold transition-colors disabled:opacity-50',
-              timer.modo === m.valor ? 'bg-placa text-muro' : 'text-tinta hover:bg-white/10',
+              'min-h-10 rounded-lg text-sm font-bold transition-colors disabled:opacity-50',
+              timer.modo === m.valor ? 'bg-painel-alto text-tinta shadow-sm' : 'text-tinta-suave hover:text-tinta',
             )}
           >
             {m.rotulo}
@@ -160,15 +168,15 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
       </div>
 
       <div
-        className={cn('rounded-md py-2 text-center', fim && 'alarme')}
+        className={cn('rounded-2xl py-2 text-center', fim && 'alarme')}
         role="timer"
         aria-live="off"
         aria-label={fim ? 'Tempo esgotado' : 'Tempo'}
       >
-        <p className="font-display text-[5.5rem] font-black leading-none tabular-nums sm:text-[8rem]">
+        <p className="font-display text-[6rem] font-black leading-none tabular-nums sm:text-[8.5rem]">
           {formatar(exibidoMs(timer, agora), timer.modo === 'regressivo')}
         </p>
-        <p className="mt-1 min-h-6 font-bold">
+        <p className="mt-1 min-h-6 text-sm font-bold">
           <Situacao timer={timer} agora={agora} />
         </p>
       </div>
@@ -177,10 +185,10 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
 
       {podeConfigurar && !comecou ? (
         <fieldset className="flex flex-wrap items-end justify-center gap-2">
-          <legend className="mb-1 w-full text-center text-sm text-tinta-suave">
+          <legend className="mb-2 w-full text-center text-sm text-tinta-suave">
             {timer.modo === 'regressivo' ? 'Contar a partir de' : 'Tempo de jogo (0 = sem limite)'}
           </legend>
-          <label className="flex flex-col items-center text-sm">
+          <label className="flex flex-col items-center gap-1 text-xs font-bold text-tinta-suave">
             Minutos
             <input
               type="number"
@@ -189,11 +197,11 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
               max={999}
               value={minutos}
               onChange={(e) => definirDuracao(e.target.valueAsNumber, segundos)}
-              className="mt-1 h-12 w-24 rounded-md border-2 border-muro-escuro bg-muro text-center font-display text-2xl font-bold text-tinta"
+              className={CAMPO_TEMPO}
             />
           </label>
-          <span className="pb-2 font-display text-3xl font-black">:</span>
-          <label className="flex flex-col items-center text-sm">
+          <span className="pb-2 font-display text-3xl font-black text-tinta-suave">:</span>
+          <label className="flex flex-col items-center gap-1 text-xs font-bold text-tinta-suave">
             Segundos
             <input
               type="number"
@@ -202,7 +210,7 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
               max={59}
               value={segundos}
               onChange={(e) => definirDuracao(minutos, Math.min(59, e.target.valueAsNumber))}
-              className="mt-1 h-12 w-24 rounded-md border-2 border-muro-escuro bg-muro text-center font-display text-2xl font-bold text-tinta"
+              className={CAMPO_TEMPO}
             />
           </label>
         </fieldset>
@@ -210,12 +218,13 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
 
       <div className="flex gap-2">
         {timer.rodando ? (
-          <Botao className="min-h-16 flex-1 text-2xl" onClick={() => despachar({ tipo: 'pausar', agora: Date.now() })}>
+          <Botao className="min-h-16 flex-1 text-xl" onClick={() => despachar({ tipo: 'pausar', agora: Date.now() })}>
+            <Icone nome="pausa" />
             Pausar
           </Botao>
         ) : (
           <Botao
-            className="min-h-16 flex-1 text-2xl"
+            className="min-h-16 flex-1 text-xl"
             disabled={fim || (timer.modo === 'regressivo' && timer.duracaoSeg === 0)}
             onClick={() => {
               prepararSom()
@@ -223,18 +232,23 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
               onRecolher()
             }}
           >
+            <Icone nome="play" />
             {comecou ? 'Continuar' : 'Iniciar'}
           </Botao>
         )}
         <Botao
           variante="contorno"
-          className="min-h-16 bg-transparent"
+          className="min-h-16 px-4"
           disabled={timer.rodando || !comecou}
           onClick={() => despachar({ tipo: 'zerarTempo' })}
         >
+          <Icone nome="reiniciar" className="size-4" />
           Zerar tempo
         </Botao>
       </div>
     </section>
   )
 }
+
+const CAMPO_TEMPO =
+  'h-14 w-24 rounded-xl bg-muro text-center font-display text-3xl font-black text-tinta ring-1 ring-inset ring-white/8 focus-visible:outline-2 focus-visible:outline-placa'

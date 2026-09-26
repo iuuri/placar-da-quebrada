@@ -62,14 +62,26 @@ export function App() {
     ? { aberta: flutuanteAberta, alternar: () => void alternarFlutuante(), erro: erroFlutuante }
     : undefined
   const fim = acabou(timer, agora)
-  const comecou = timer.rodando || decorridoMs(timer, agora) > 0
-  // Depois de iniciar, o cronômetro vira uma barra pequena no rodapé; abre de novo no fim do tempo.
-  const [cronometroAberto, setCronometroAberto] = useState(!comecou)
+  // O cronômetro fica em cima do placar, fechado por padrão (só o tempo); os ajustes abrem na seta.
+  const [cronometroAberto, setCronometroAberto] = useState(false)
   // Regressivo parado com o tempo normal esgotado (acabou, ou já deu acréscimo e falta tocar em Continuar):
-  // mostra o completo para dar acréscimo com calma.
+  // abre os ajustes sozinho para dar acréscimo com calma.
   const esperandoAcrescimo =
     timer.modo === 'regressivo' && !timer.rodando && timer.duracaoSeg > 0 && timer.acumuladoMs >= timer.duracaoSeg * 1000
-  const cronometroCompleto = cronometroAberto || fim || !comecou || esperandoAcrescimo
+  const ajustesAbertos = cronometroAberto || fim || esperandoAcrescimo
+
+  // Quando o cronômetro sai da tela (rolando até os registros), o tempo aparece pequeno no topo.
+  const areaCronometro = useRef<HTMLDivElement>(null)
+  const [cronometroNaTela, setCronometroNaTela] = useState(true)
+  useEffect(() => {
+    const alvo = areaCronometro.current
+    if (!alvo || typeof IntersectionObserver === 'undefined') return
+    // A margem desconta a altura do topo fixo.
+    const observador = new IntersectionObserver(([e]) => setCronometroNaTela(e.isIntersecting), { rootMargin: '-72px 0px 0px 0px' })
+    observador.observe(alvo)
+    return () => observador.disconnect()
+  }, [])
+  const mostrarMini = !cronometroNaTela
 
   // Regressivo chegou a zero: para o tempo e apita.
   useEffect(() => {
@@ -118,29 +130,35 @@ export function App() {
           <h1 className="flex shrink-0 items-center gap-2.5">
             <img src="/favicon.svg" alt="" width={40} height={40} className="size-10 rounded-xl" />
             {/* Com o cronômetro resumido no topo, em tela bem estreita, o nome fica só para leitores de tela. */}
-            <span className={cn('flex flex-col leading-none', !cronometroCompleto && 'max-[419px]:sr-only')}>
+            <span className={cn('flex flex-col leading-none', mostrarMini && 'max-[419px]:sr-only')}>
               <span className="text-xs font-bold text-tinta-suave">Placar da</span>
               <span className="font-display text-2xl font-black">Quebrada</span>
             </span>
           </h1>
-          {cronometroCompleto ? null : (
-            <CronometroMini timer={timer} agora={agora} despachar={despachar} onAbrir={() => setCronometroAberto(true)} />
-          )}
+          {mostrarMini ? (
+            <CronometroMini
+              timer={timer}
+              agora={agora}
+              despachar={despachar}
+              onAbrir={() => areaCronometro.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            />
+          ) : null}
         </div>
       </header>
 
       <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-[minmax(0,1fr)] gap-5 px-4 pt-2 pb-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-4">
-          <Placar placar={estado.placar} minuto={minutoDeJogo(timer, agora)} despachar={despachar} />
-          {cronometroCompleto ? (
+          <div ref={areaCronometro} className="scroll-mt-20">
             <Cronometro
               timer={timer}
               agora={agora}
               despachar={despachar}
-              onRecolher={() => setCronometroAberto(false)}
+              aberto={ajustesAbertos}
+              onAlternar={setCronometroAberto}
               flutuante={flutuante}
             />
-          ) : null}
+          </div>
+          <Placar placar={estado.placar} minuto={minutoDeJogo(timer, agora)} despachar={despachar} />
           <Punicoes punicoes={estado.punicoes} placar={estado.placar} timer={timer} agora={agora} despachar={despachar} />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
@@ -163,7 +181,7 @@ export function App() {
             <ResetarTudo
               onResetar={() => {
                 despachar({ tipo: 'resetarTudo' })
-                setCronometroAberto(true)
+                setCronometroAberto(false)
               }}
             />
           </div>

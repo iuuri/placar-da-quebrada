@@ -24,8 +24,8 @@ src/
   App.tsx          # tela única e efeitos (alarme, tela acesa)
   estado.ts        # estado, reducer e persistência no localStorage
   tempo.ts         # cálculos do cronômetro (funções puras, testadas)
-  components/      # Placar (+ pop-up do gol), Cronometro(Mini), Anotacoes, Punicoes, Sumula, Estatisticas (gráficos da súmula), InstalarApp, Dialogo, ResetarTudo, Botao, Icone (ícones SVG próprios)
-  lib/             # utils (cn), recursos do aparelho (som, vibração, wake lock), sumula.ts (PDF), estatisticas.ts (cálculos da súmula: comparativo, linha do tempo, gols por faixa, jogadores, destaques), flutuante.ts (janela flutuante), instalar.ts (PWA)
+  components/      # Placar (+ pop-up do gol), Cronometro(Mini), Anotacoes, Punicoes, Sumula, Estatisticas (gráficos da súmula), InstalarApp, AvisoDesfazer, Dialogo, ResetarTudo, Botao, Icone (ícones SVG próprios)
+  lib/             # utils (cn), recursos do aparelho (som, vibração, wake lock), sumula.ts (PDF), estatisticas.ts (cálculos da súmula: comparativo, linha do tempo, gols por faixa, jogadores, destaques), flutuante.ts (janela flutuante), instalar.ts (PWA), desfazer.ts (quais ações têm Desfazer e como voltam)
 ```
 
 ## Regras

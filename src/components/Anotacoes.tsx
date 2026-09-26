@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { MAX_TEXTO_NOTA, type Acao, type Estado, type Lado, type Nota, type TipoNota } from '@/estado'
+import { MAX_TEXTO_NOTA, type Acao, type Periodo, type Estado, type Lado, type Nota, type TipoNota } from '@/estado'
 import { cn, novoId } from '@/lib/utils'
 import { TIPOS, TIPOS_BOTAO } from '@/tipos'
 import { Botao } from './Botao'
@@ -14,6 +14,8 @@ type Props = {
   minuto: number
   decorridoMs: number
   despachar: (a: Acao) => void
+  // Em jogo de 2 tempos, qual está em andamento (null = jogo de 1 tempo só).
+  periodo: Periodo | null
 }
 
 type Pendente = { tipo: TipoNota; minuto: number; decorridoMs: number }
@@ -21,7 +23,7 @@ type Pendente = { tipo: TipoNota; minuto: number; decorridoMs: number }
 const CAMPO =
   'min-h-12 w-full rounded-xl bg-muro px-4 text-base font-normal ring-1 ring-inset ring-white/8 placeholder:text-tinta-suave/70 focus-visible:outline-2 focus-visible:outline-placa'
 
-export function Anotacoes({ notas, placar, minuto, decorridoMs, despachar }: Props) {
+export function Anotacoes({ notas, placar, minuto, decorridoMs, despachar, periodo }: Props) {
   // O minuto e o tempo são guardados no toque do botão (não quando o time é escolhido).
   const [pendente, setPendente] = useState<Pendente | null>(null)
   const lista = useRef<HTMLOListElement>(null)
@@ -50,7 +52,7 @@ export function Anotacoes({ notas, placar, minuto, decorridoMs, despachar }: Pro
           ) : null}
         </h2>
         <span className="text-sm text-tinta-suave">
-          minuto <span className="font-display text-lg font-black text-tinta">{minuto}'</span>
+          {periodo ? `${periodo}º tempo · ` : ''}minuto <span className="font-display text-lg font-black text-tinta">{minuto}'</span>
         </span>
       </div>
 
@@ -80,13 +82,13 @@ export function Anotacoes({ notas, placar, minuto, decorridoMs, despachar }: Pro
           className="flex max-h-[30rem] flex-col gap-1.5 overflow-y-auto overscroll-contain lg:max-h-[calc(100dvh-22rem)]"
         >
           {notas.map((n) => (
-            <BlocoNota key={n.id} nota={n} nomes={nomes} despachar={despachar} />
+            <BlocoNota key={n.id} nota={n} nomes={nomes} despachar={despachar} doisTempos={periodo !== null} />
           ))}
         </ol>
       )}
 
       {pendente ? (
-        <EscolherTime pendente={pendente} nomes={nomes} onEscolher={registrar} onFechar={() => setPendente(null)} />
+        <EscolherTime pendente={pendente} nomes={nomes} periodo={periodo} onEscolher={registrar} onFechar={() => setPendente(null)} />
       ) : null}
     </section>
   )
@@ -95,11 +97,13 @@ export function Anotacoes({ notas, placar, minuto, decorridoMs, despachar }: Pro
 function EscolherTime({
   pendente,
   nomes,
+  periodo,
   onEscolher,
   onFechar,
 }: {
   pendente: Pendente
   nomes: Nomes
+  periodo: Periodo | null
   onEscolher: (lado: Lado | null, texto: string) => void
   onFechar: () => void
 }) {
@@ -112,7 +116,7 @@ function EscolherTime({
       titulo={
         <span className="flex items-center gap-2.5">
           <IconeTipo tipo={pendente.tipo} className={cn('size-6', tipo.tom)} />
-          {tipo.rotulo} aos {pendente.minuto}'
+          {tipo.rotulo} aos {pendente.minuto}'{periodo ? ` do ${periodo}º tempo` : ''}
         </span>
       }
       onFechar={onFechar}
@@ -157,7 +161,17 @@ function EscolherTime({
   )
 }
 
-function BlocoNota({ nota, nomes, despachar }: { nota: Nota; nomes: Nomes; despachar: Props['despachar'] }) {
+function BlocoNota({
+  nota,
+  nomes,
+  despachar,
+  doisTempos,
+}: {
+  nota: Nota
+  nomes: Nomes
+  despachar: Props['despachar']
+  doisTempos: boolean
+}) {
   const [modo, setModo] = useState<'ver' | 'editar' | 'apagar'>('ver')
   const [rascunho, setRascunho] = useState(nota.texto)
   const [ladoRascunho, setLadoRascunho] = useState<Lado | null>(nota.lado)
@@ -172,6 +186,7 @@ function BlocoNota({ nota, nomes, despachar }: { nota: Nota; nomes: Nomes; despa
       <div className="flex items-center gap-2 min-[360px]:gap-3">
         <span className="w-8 shrink-0 text-right font-display text-2xl min-[360px]:w-10 font-black leading-none tabular-nums">
           {nota.minuto}'
+          {doisTempos ? <span className="block font-sans text-[0.6rem] font-bold text-tinta-suave">{nota.periodo ?? 1}ºT</span> : null}
         </span>
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muro min-[360px]:size-10">
           <IconeTipo tipo={nota.tipo} className={tipo.tom} />

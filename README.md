@@ -10,6 +10,7 @@ Timer e placar para jogos de futebol de bairro, direto no navegador do celular, 
   - Regressivo: para sozinho no zero, apita e vibra
   - Progressivo: mostra quanto já passou do tempo de jogo
   - **Acréscimo**: botões +1', +2', +3', +5' (também depois que o tempo acabou); no progressivo, apita quando o acréscimo termina
+  - **1 ou 2 tempos** (padrão: 2). No fim do 1º tempo aparece **Encerrar 1º tempo**: o cronômetro zera para o 2º tempo (intervalo), o minuto recomeça e punições em andamento continuam com o que faltava. Registros, pop-ups e súmula dizem de qual tempo é cada minuto ("12' 2ºT"), e a súmula mostra o placar do 1º tempo e os gráficos separados por tempo
   - Continua certo se a tela apagar ou a página recarregar
   - Mantém a tela acesa enquanto o tempo corre (quando o aparelho permite)
   - **Janela flutuante** (experimental): botão 📺 no cronômetro completo abre o tempo, o placar e as punições numa janelinha que fica por cima de outros apps ao minimizar o navegador (picture-in-picture; depende do navegador). Fecha sozinha quando a pessoa volta para a página. Abrir sozinha ao minimizar não é possível: os navegadores só permitem isso para conteúdo com som
@@ -20,6 +21,7 @@ Timer e placar para jogos de futebol de bairro, direto no navegador do celular, 
 - **Punição de 2 minutos**: cronômetro regressivo por jogador, que anda junto com o tempo de jogo (pausa quando o jogo pausa) e avisa quando o jogador pode voltar
 - **Súmula**: botão **Súmula** no fim da página abre a tela com placar, **destaques** (primeiro gol, maior tempo sem gol, artilheiro, fair play), **estatísticas da partida** (barras comparando os dois times), **linha do tempo** do jogo, **gols por tempo de jogo**, tabela de **jogadores** e todos os registros; tudo isso também vai no **PDF protegido contra edição**, que pode ser compartilhado (WhatsApp, e-mail…) ou baixado
 - **Instalar como app (PWA)**: botão **📲 Instalar app** no fim da página. No Android/computador abre a instalação do navegador; no iPhone mostra o passo a passo do Safari (Compartilhar → Adicionar à Tela de Início). Instalado, abre em tela cheia com o ícone do Placar e funciona **sem internet**
+- **Desfazer**: depois de marcar/tirar falta, tirar gol, registrar, editar ou apagar um registro, encerrar punição, zerar o tempo, encerrar o 1º tempo ou resetar tudo, aparece por alguns segundos um aviso com **Desfazer**
 - **Resetar tudo** (no fim da página): zera placar, tempo e anotações (pede confirmação)
 
 Visual em **tema escuro**, com o amarelo da placa como destaque.

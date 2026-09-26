@@ -4,7 +4,10 @@ import {
   comparativo,
   destaques,
   duracaoEixo,
+  duracaoTempo,
   eventosLinhaDoTempo,
+  minutoLinha,
+  rotuloMinuto,
   golsPorFaixa,
   porJogador,
   proporcao,
@@ -137,21 +140,25 @@ export function LinhaDoTempo({ estado, agora, nomes }: { estado: Estado; agora: 
   const eixo = duracaoEixo(estado, agora)
   const passo = eixo <= 30 ? 5 : 10
   const x = (min: number) => MARGEM + (Math.min(min, eixo) / eixo) * (LARGURA - MARGEM * 2)
+  // No 2º tempo, o eixo segue depois do 1º; os minutos de cada tempo recomeçam do zero.
+  const dois = estado.periodo === 2
+  const fimPrimeiro = duracaoTempo(estado, agora, 1)
 
   // Registros no mesmo minuto (ou muito perto) se empilham para fora do eixo, sem se cobrir.
   const colocados: Record<Lado, number[]> = { casa: [], visitante: [] }
   const marcadores = eventos.map((n) => {
-    const cx = x(n.minuto)
+    const cx = x(minutoLinha(n, estado, agora))
     const nivel = colocados[n.lado].filter((outro) => Math.abs(outro - cx) < 13).length
     colocados[n.lado].push(cx)
     const distancia = 20 + Math.min(nivel, 2) * 15
     return { n, cx, cy: n.lado === 'casa' ? EIXO_Y - distancia : EIXO_Y + distancia }
   })
-  const ticks: number[] = []
-  for (let m = 0; m <= eixo; m += passo) ticks.push(m)
+  const ticks: { pos: number; rotulo: string }[] = []
+  for (let m = 0; m <= (dois ? fimPrimeiro - 1 : eixo); m += passo) ticks.push({ pos: m, rotulo: `${m}'` })
+  if (dois) for (let m = passo; fimPrimeiro + m <= eixo; m += passo) ticks.push({ pos: fimPrimeiro + m, rotulo: `${m}'` })
   const tiposUsados = [...new Set(eventos.map((e) => e.tipo))]
   const resumo = eventos
-    .map((e) => `${e.minuto}' ${TIPOS[e.tipo].rotulo} ${nomes[e.lado]}${e.texto ? ` ${e.texto}` : ''}`)
+    .map((e) => `${rotuloMinuto(e, estado)} ${TIPOS[e.tipo].rotulo} ${nomes[e.lado]}${e.texto ? ` ${e.texto}` : ''}`)
     .join('; ')
 
   return (
@@ -159,21 +166,32 @@ export function LinhaDoTempo({ estado, agora, nomes }: { estado: Estado; agora: 
       <Titulo>Linha do tempo</Titulo>
       <div className="rounded-2xl bg-muro px-1 pt-2 pb-1">
         <svg viewBox={`0 0 ${LARGURA} 132`} role="img" aria-label={`Linha do tempo: ${resumo}`} className="w-full">
-          {ticks.map((m) => (
-            <g key={m}>
-              <line x1={x(m)} x2={x(m)} y1={8} y2={116} stroke="var(--color-muro-escuro)" strokeWidth={1} />
-              <text x={x(m)} y={128} textAnchor="middle" fontSize={9} fill="var(--color-tinta-suave)">
-                {m}'
+          {ticks.map((t) => (
+            <g key={t.pos}>
+              <line x1={x(t.pos)} x2={x(t.pos)} y1={8} y2={116} stroke="var(--color-muro-escuro)" strokeWidth={1} />
+              <text x={x(t.pos)} y={128} textAnchor="middle" fontSize={9} fill="var(--color-tinta-suave)">
+                {t.rotulo}
               </text>
             </g>
           ))}
+          {dois ? (
+            <g>
+              <line x1={x(fimPrimeiro)} x2={x(fimPrimeiro)} y1={2} y2={120} stroke="var(--color-tinta-suave)" strokeWidth={1.5} />
+              <text x={x(fimPrimeiro) - 4} y={9} textAnchor="end" fontSize={9} fontWeight={700} fill="var(--color-tinta-suave)">
+                1º tempo
+              </text>
+              <text x={x(fimPrimeiro) + 4} y={9} fontSize={9} fontWeight={700} fill="var(--color-tinta-suave)">
+                2º tempo
+              </text>
+            </g>
+          ) : null}
           <line x1={MARGEM} x2={LARGURA - MARGEM} y1={EIXO_Y} y2={EIXO_Y} stroke="var(--color-tinta-suave)" strokeWidth={2} strokeLinecap="round" />
           {/* faixa de cada time sobre o eixo, com a cor do time */}
           <circle cx={MARGEM} cy={EIXO_Y - 6} r={3} fill={COR_TIME.tela.casa} />
           <circle cx={MARGEM} cy={EIXO_Y + 6} r={3} fill={COR_TIME.tela.visitante} />
           {marcadores.map(({ n, cx, cy }) => (
             <g key={n.id}>
-              <title>{`${n.minuto}' · ${TIPOS[n.tipo].rotulo} · ${nomes[n.lado]}${n.texto ? ` · ${n.texto}` : ''}`}</title>
+              <title>{`${rotuloMinuto(n, estado)} · ${TIPOS[n.tipo].rotulo} · ${nomes[n.lado]}${n.texto ? ` · ${n.texto}` : ''}`}</title>
               <line x1={cx} x2={cx} y1={EIXO_Y} y2={cy} stroke={COR_TIME.tela[n.lado]} strokeWidth={2} />
               {n.tipo === 'amarelo' || n.tipo === 'vermelho' ? (
                 <rect
@@ -212,7 +230,8 @@ export function LinhaDoTempo({ estado, agora, nomes }: { estado: Estado; agora: 
 
 // Gols por faixa de tempo: colunas lado a lado, uma de cada time por faixa.
 export function GolsPorFaixa({ estado, agora, nomes }: { estado: Estado; agora: number; nomes: Nomes }) {
-  const faixas = golsPorFaixa(estado.notas, duracaoEixo(estado, agora))
+  const faixas = golsPorFaixa(estado, agora)
+  const dois = faixas.some((f) => f.periodo === 2)
   const maior = Math.max(0, ...faixas.flatMap((f) => [f.casa, f.visitante]))
   if (maior === 0) return null
   const ALTURA = 72 // px da coluna mais alta
@@ -224,7 +243,8 @@ export function GolsPorFaixa({ estado, agora, nomes }: { estado: Estado; agora: 
         <thead className="sr-only">
           <tr>
             {faixas.map((f) => (
-              <th key={f.inicio} scope="col">
+              <th key={`${f.periodo}-${f.inicio}`} scope="col">
+                {dois ? `${f.periodo}º tempo, ` : ''}
                 {f.inicio} a {f.fim} minutos
               </th>
             ))}
@@ -232,8 +252,15 @@ export function GolsPorFaixa({ estado, agora, nomes }: { estado: Estado; agora: 
         </thead>
         <tbody>
           <tr>
-            {faixas.map((f) => (
-              <td key={f.inicio} className="border-b border-muro-escuro align-bottom">
+            {faixas.map((f, i) => (
+              <td
+                key={`${f.periodo}-${f.inicio}`}
+                className={cn(
+                  'border-b border-muro-escuro align-bottom',
+                  // separa os dois tempos com uma linha
+                  i > 0 && f.periodo !== faixas[i - 1].periodo && 'border-l border-l-tinta-suave',
+                )}
+              >
                 <div className="flex items-end justify-center gap-0.5" style={{ height: ALTURA + 16 }}>
                   {(['casa', 'visitante'] as const).map((lado) => (
                     <div key={lado} className="flex w-full max-w-4 flex-col items-center justify-end gap-0.5">
@@ -257,11 +284,24 @@ export function GolsPorFaixa({ estado, agora, nomes }: { estado: Estado; agora: 
           </tr>
           <tr aria-hidden>
             {faixas.map((f) => (
-              <td key={f.inicio} className="pt-1 text-center text-[0.6rem] text-tinta-suave tabular-nums">
+              <td key={`${f.periodo}-${f.inicio}`} className="pt-1 text-center text-[0.6rem] text-tinta-suave tabular-nums">
                 {f.inicio}–{f.fim}'
               </td>
             ))}
           </tr>
+          {dois ? (
+            <tr aria-hidden>
+              {([1, 2] as const).map((p) => (
+                <td
+                  key={p}
+                  colSpan={faixas.filter((f) => f.periodo === p).length}
+                  className="pt-1 text-center text-[0.65rem] font-bold text-tinta-suave"
+                >
+                  {p}º tempo
+                </td>
+              ))}
+            </tr>
+          ) : null}
         </tbody>
       </table>
     </section>

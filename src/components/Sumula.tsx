@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Estado } from '@/estado'
+import { rotuloMinuto } from '@/lib/estatisticas'
 import { compartilharOuBaixar, gerarSumulaPdf, nomeDoArquivo } from '@/lib/sumula'
 import { decorridoMs, formatar } from '@/tempo'
 import { TIPOS } from '@/tipos'
@@ -87,7 +88,7 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
           <ol className="flex max-h-48 flex-col divide-y divide-muro-escuro overflow-y-auto rounded-2xl bg-muro px-3 text-sm">
             {registros.map((n) => (
               <li key={n.id} className="flex items-center gap-2 py-2">
-                <span className="w-8 shrink-0 font-bold tabular-nums">{n.minuto}'</span>
+                <span className={cn('shrink-0 font-bold tabular-nums', estado.tempos === 2 ? 'w-14' : 'w-8')}>{rotuloMinuto(n, estado)}</span>
                 <IconeTipo tipo={n.tipo} className={cn('size-4', TIPOS[n.tipo].tom)} />
                 <span className="min-w-0 flex-1 truncate">
                   {TIPOS[n.tipo].rotulo}

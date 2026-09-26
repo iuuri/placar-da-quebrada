@@ -1,4 +1,4 @@
-import type { Acao } from '@/estado'
+import type { Acao, Periodo } from '@/estado'
 import { prepararSom } from '@/lib/recursos'
 import { cn } from '@/lib/utils'
 import {
@@ -21,6 +21,8 @@ type Props = {
   // Fechado mostra só o tempo (e iniciar/pausar); aberto mostra os ajustes.
   aberto: boolean
   onAlternar: (abrir: boolean) => void
+  // Jogo em 1 ou 2 tempos, e em qual tempo está.
+  jogo: { tempos: 1 | 2; periodo: Periodo }
   // Janela flutuante (picture-in-picture); ausente quando o navegador não suporta.
   flutuante?: { aberta: boolean; alternar: () => void; erro: string | null }
 }
@@ -32,7 +34,22 @@ const MODOS: { valor: Modo; rotulo: string }[] = [
 
 const OPCOES_ACRESCIMO = [1, 2, 3, 5]
 
-function Situacao({ timer, agora, curta = false }: { timer: EstadoTimer; agora: number; curta?: boolean }) {
+const TEMPOS: { valor: 1 | 2; rotulo: string }[] = [
+  { valor: 1, rotulo: '1 tempo' },
+  { valor: 2, rotulo: '2 tempos' },
+]
+
+function Situacao({
+  timer,
+  agora,
+  jogo,
+  curta = false,
+}: {
+  timer: EstadoTimer
+  agora: number
+  jogo: Props['jogo']
+  curta?: boolean
+}) {
   const acrescimo = timer.acrescimoSeg * 1000
   if (curta) {
     const alem = alemDoTempoMs(timer, agora)
@@ -41,7 +58,10 @@ function Situacao({ timer, agora, curta = false }: { timer: EstadoTimer; agora: 
     if (acrescimo > 0) return <span className="text-placa"> · +{Math.round(timer.acrescimoSeg / 60)}' de acréscimo</span>
     return timer.duracaoSeg > 0 ? <> · {formatar(timer.duracaoSeg * 1000)}</> : null
   }
-  if (acabou(timer, agora)) return <>Fim do tempo! Dê acréscimo ou zere o tempo.</>
+  if (acabou(timer, agora)) {
+    if (jogo.tempos === 1) return <>Fim do tempo! Dê acréscimo ou zere o tempo.</>
+    return jogo.periodo === 1 ? <>Fim do 1º tempo! Dê acréscimo ou encerre o tempo.</> : <>Fim do jogo! Dê acréscimo se precisar.</>
+  }
   if (acabouAcrescimo(timer, agora)) return <span className="rounded-full bg-cartao px-3 py-0.5 text-white">Fim do acréscimo!</span>
   if (timer.modo === 'regressivo') {
     return acrescimo > 0 ? <span className="text-placa">Com acréscimo de +{formatar(acrescimo)}</span> : null
@@ -120,7 +140,7 @@ function Alternar({ aberto, onAlternar }: Pick<Props, 'aberto' | 'onAlternar'>) 
   )
 }
 
-export function Cronometro({ timer, agora, despachar, aberto, onAlternar, flutuante }: Props) {
+export function Cronometro({ timer, agora, despachar, aberto, onAlternar, jogo, flutuante }: Props) {
   const fim = acabou(timer, agora)
   const comecou = decorridoMs(timer, agora) > 0
   const minutos = Math.floor(timer.duracaoSeg / 60)
@@ -134,6 +154,12 @@ export function Cronometro({ timer, agora, despachar, aberto, onAlternar, flutua
   }
 
   const bloqueado = fim || (timer.modo === 'regressivo' && timer.duracaoSeg === 0)
+  const doisTempos = jogo.tempos === 2
+  // Fechar o 1º tempo: com o tempo parado (no regressivo, ele para sozinho no zero).
+  const podeEncerrar = doisTempos && jogo.periodo === 1 && comecou && !timer.rodando
+  const intervalo = doisTempos && jogo.periodo === 2 && !comecou
+  const rotuloIniciar = comecou ? 'Continuar' : intervalo ? 'Iniciar 2º tempo' : 'Iniciar'
+  const nomeTempo = doisTempos ? `${jogo.periodo}º tempo` : null
   function iniciar() {
     prepararSom()
     despachar({ tipo: 'iniciar', agora: Date.now() })
@@ -152,8 +178,9 @@ export function Cronometro({ timer, agora, despachar, aberto, onAlternar, flutua
               className={cn('size-2 shrink-0 rounded-full', timer.rodando ? 'ao-vivo bg-gramado' : 'bg-tinta-suave')}
             />
             <span className="truncate">
-              {timer.rodando ? (timer.modo === 'regressivo' ? 'Regressivo' : 'Progressivo') : comecou ? 'Pausado' : 'Pronto para começar'}
-              <Situacao timer={timer} agora={agora} curta />
+              {nomeTempo ? `${nomeTempo} · ` : ''}
+              {timer.rodando ? (timer.modo === 'regressivo' ? 'Regressivo' : 'Progressivo') : comecou ? 'Pausado' : intervalo ? 'Intervalo' : 'Pronto para começar'}
+              <Situacao timer={timer} agora={agora} jogo={jogo} curta />
             </span>
           </p>
         </div>
@@ -170,8 +197,8 @@ export function Cronometro({ timer, agora, despachar, aberto, onAlternar, flutua
         ) : (
           <button
             type="button"
-            aria-label={comecou ? 'Continuar' : 'Iniciar'}
-            title={comecou ? 'Continuar' : 'Iniciar'}
+            aria-label={rotuloIniciar}
+            title={rotuloIniciar}
             disabled={bloqueado}
             onClick={iniciar}
             className="grid size-14 shrink-0 place-items-center rounded-full bg-placa text-muro transition-transform active:scale-95 disabled:opacity-35"
@@ -235,20 +262,60 @@ export function Cronometro({ timer, agora, despachar, aberto, onAlternar, flutua
         aria-live="off"
         aria-label={fim ? 'Tempo esgotado' : 'Tempo'}
       >
+        {nomeTempo ? <p className="mb-1 text-sm font-bold opacity-70">{intervalo ? `Intervalo · próximo: ${nomeTempo}` : nomeTempo}</p> : null}
         <p className="font-display text-[6rem] font-black leading-none tabular-nums sm:text-[8.5rem]">
           {formatar(exibidoMs(timer, agora), timer.modo === 'regressivo')}
         </p>
         <p className="mt-1 min-h-6 text-sm font-bold">
-          <Situacao timer={timer} agora={agora} />
+          <Situacao timer={timer} agora={agora} jogo={jogo} />
         </p>
       </div>
 
       {mostrarAcrescimo ? <Acrescimo timer={timer} despachar={despachar} destaque={fim} /> : null}
 
+      {podeEncerrar ? (
+        <Botao
+          variante={fim ? 'placa' : 'contorno'}
+          className="min-h-14 text-lg"
+          onClick={() => {
+            despachar({ tipo: 'encerrarTempo' })
+            onAlternar(false)
+          }}
+        >
+          Encerrar 1º tempo
+        </Botao>
+      ) : null}
+
+      {podeConfigurar && !comecou && jogo.periodo === 1 ? (
+        <div role="radiogroup" aria-label="Tempos de jogo" className="grid grid-cols-2 gap-1 rounded-xl bg-muro p-1">
+          {TEMPOS.map((t) => (
+            <button
+              key={t.valor}
+              type="button"
+              role="radio"
+              aria-checked={jogo.tempos === t.valor}
+              onClick={() => despachar({ tipo: 'definirTempos', tempos: t.valor })}
+              className={cn(
+                'min-h-10 rounded-lg text-sm font-bold transition-colors',
+                jogo.tempos === t.valor ? 'bg-painel-alto text-tinta shadow-sm' : 'text-tinta-suave hover:text-tinta',
+              )}
+            >
+              {t.rotulo}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {podeConfigurar && !comecou ? (
         <fieldset className="flex flex-wrap items-end justify-center gap-2">
           <legend className="mb-2 w-full text-center text-sm text-tinta-suave">
-            {timer.modo === 'regressivo' ? 'Contar a partir de' : 'Tempo de jogo (0 = sem limite)'}
+            {timer.modo === 'regressivo'
+              ? doisTempos
+                ? 'Cada tempo começa em'
+                : 'Contar a partir de'
+              : doisTempos
+                ? 'Duração de cada tempo (0 = sem limite)'
+                : 'Tempo de jogo (0 = sem limite)'}
           </legend>
           <label className="flex flex-col items-center gap-1 text-xs font-bold text-tinta-suave">
             Minutos
@@ -294,7 +361,7 @@ export function Cronometro({ timer, agora, despachar, aberto, onAlternar, flutua
             }}
           >
             <Icone nome="play" />
-            {comecou ? 'Continuar' : 'Iniciar'}
+            {rotuloIniciar}
           </Botao>
         )}
         <Botao

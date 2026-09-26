@@ -9,7 +9,7 @@ const jogo: Estado = {
 describe('janela flutuante', () => {
   it('mostra tempo e placar; parado aparece "Pausado"', () => {
     const t = textosFlutuante(jogo, 0)
-    expect(t).toEqual({ tempo: '25:00', placar: 'Unidos 2 × 1 São Jorge', detalhe: 'Pausado', alerta: false })
+    expect(t).toEqual({ tempo: '25:00', placar: 'Unidos 2 × 1 São Jorge', detalhe: '1ºT · Pausado', alerta: false })
   })
 
   it('conta com o tempo correndo e mostra a punição que acaba primeiro', () => {
@@ -23,12 +23,12 @@ describe('janela flutuante', () => {
     }
     const t = textosFlutuante(e, 60_000)
     expect(t.tempo).toBe('24:00')
-    expect(t.detalhe).toBe('Punição 01:00 (+1)')
+    expect(t.detalhe).toBe('1ºT · Punição 01:00 (+1)')
   })
 
   it('avisa o fim do tempo em destaque', () => {
     const e: Estado = { ...jogo, timer: { ...jogo.timer, duracaoSeg: 60, acumuladoMs: 60_000 } }
-    expect(textosFlutuante(e, 0)).toMatchObject({ tempo: '00:00', detalhe: 'Fim do tempo!', alerta: true })
+    expect(textosFlutuante(e, 0)).toMatchObject({ tempo: '00:00', detalhe: '1ºT · Fim do tempo!', alerta: true })
   })
 
   it('fica escondida onde o navegador não suporta (ex.: ambiente de teste)', () => {

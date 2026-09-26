@@ -18,8 +18,9 @@ type Props = {
   timer: EstadoTimer
   agora: number
   despachar: (a: Acao) => void
-  // Chamado ao iniciar/continuar e no botão Recolher: a tela troca pelo cronômetro resumido.
-  onRecolher: () => void
+  // Fechado mostra só o tempo (e iniciar/pausar); aberto mostra os ajustes.
+  aberto: boolean
+  onAlternar: (abrir: boolean) => void
   // Janela flutuante (picture-in-picture); ausente quando o navegador não suporta.
   flutuante?: { aberta: boolean; alternar: () => void; erro: string | null }
 }
@@ -31,8 +32,15 @@ const MODOS: { valor: Modo; rotulo: string }[] = [
 
 const OPCOES_ACRESCIMO = [1, 2, 3, 5]
 
-function Situacao({ timer, agora }: { timer: EstadoTimer; agora: number }) {
+function Situacao({ timer, agora, curta = false }: { timer: EstadoTimer; agora: number; curta?: boolean }) {
   const acrescimo = timer.acrescimoSeg * 1000
+  if (curta) {
+    const alem = alemDoTempoMs(timer, agora)
+    if (acabouAcrescimo(timer, agora)) return <span className="text-cartao"> · fim do acréscimo</span>
+    if (timer.modo === 'progressivo' && alem > 0) return <span className="text-placa"> · acréscimo +{formatar(alem)}</span>
+    if (acrescimo > 0) return <span className="text-placa"> · +{Math.round(timer.acrescimoSeg / 60)}' de acréscimo</span>
+    return timer.duracaoSeg > 0 ? <> · {formatar(timer.duracaoSeg * 1000)}</> : null
+  }
   if (acabou(timer, agora)) return <>Fim do tempo! Dê acréscimo ou zere o tempo.</>
   if (acabouAcrescimo(timer, agora)) return <span className="rounded-full bg-cartao px-3 py-0.5 text-white">Fim do acréscimo!</span>
   if (timer.modo === 'regressivo') {
@@ -97,7 +105,22 @@ function Acrescimo({ timer, despachar, destaque }: { timer: EstadoTimer; despach
   )
 }
 
-export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: Props) {
+function Alternar({ aberto, onAlternar }: Pick<Props, 'aberto' | 'onAlternar'>) {
+  return (
+    <button
+      type="button"
+      onClick={() => onAlternar(!aberto)}
+      aria-expanded={aberto}
+      aria-label={aberto ? 'Fechar ajustes do cronômetro' : 'Abrir ajustes do cronômetro'}
+      title={aberto ? 'Fechar ajustes' : 'Abrir ajustes'}
+      className="grid size-11 shrink-0 place-items-center rounded-full bg-painel-alto hover:bg-white/12"
+    >
+      <Icone nome={aberto ? 'recolher' : 'expandir'} />
+    </button>
+  )
+}
+
+export function Cronometro({ timer, agora, despachar, aberto, onAlternar, flutuante }: Props) {
   const fim = acabou(timer, agora)
   const comecou = decorridoMs(timer, agora) > 0
   const minutos = Math.floor(timer.duracaoSeg / 60)
@@ -110,39 +133,78 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
     despachar({ tipo: 'definirDuracao', segundos: (Number.isFinite(min) ? min : 0) * 60 + (Number.isFinite(seg) ? seg : 0) })
   }
 
+  const bloqueado = fim || (timer.modo === 'regressivo' && timer.duracaoSeg === 0)
+  function iniciar() {
+    prepararSom()
+    despachar({ tipo: 'iniciar', agora: Date.now() })
+  }
+
+  if (!aberto) {
+    return (
+      <section aria-label="Cronômetro" className="flex items-center gap-3 rounded-3xl bg-painel py-3 pr-3 pl-5">
+        <div role="timer" aria-live="off" aria-label="Tempo" className="min-w-0 flex-1">
+          <p className="font-display text-[3.25rem] font-black leading-none tabular-nums">
+            {formatar(exibidoMs(timer, agora), timer.modo === 'regressivo')}
+          </p>
+          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-xs font-bold text-tinta-suave">
+            <span
+              aria-hidden
+              className={cn('size-2 shrink-0 rounded-full', timer.rodando ? 'ao-vivo bg-gramado' : 'bg-tinta-suave')}
+            />
+            <span className="truncate">
+              {timer.rodando ? (timer.modo === 'regressivo' ? 'Regressivo' : 'Progressivo') : comecou ? 'Pausado' : 'Pronto para começar'}
+              <Situacao timer={timer} agora={agora} curta />
+            </span>
+          </p>
+        </div>
+        {timer.rodando ? (
+          <button
+            type="button"
+            aria-label="Pausar"
+            title="Pausar"
+            onClick={() => despachar({ tipo: 'pausar', agora: Date.now() })}
+            className="grid size-14 shrink-0 place-items-center rounded-full bg-placa text-muro transition-transform active:scale-95"
+          >
+            <Icone nome="pausa" className="size-6" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label={comecou ? 'Continuar' : 'Iniciar'}
+            title={comecou ? 'Continuar' : 'Iniciar'}
+            disabled={bloqueado}
+            onClick={iniciar}
+            className="grid size-14 shrink-0 place-items-center rounded-full bg-placa text-muro transition-transform active:scale-95 disabled:opacity-35"
+          >
+            <Icone nome="play" className="size-6" />
+          </button>
+        )}
+        <Alternar aberto={aberto} onAlternar={onAlternar} />
+      </section>
+    )
+  }
+
   return (
     <section aria-label="Cronômetro" className="flex flex-col gap-4 rounded-3xl bg-painel p-4 sm:p-5">
-      {(comecou && !fim) || flutuante ? (
-        <div className="-mb-1 flex items-center justify-between gap-2">
-          {flutuante ? (
-            <button
-              type="button"
-              onClick={flutuante.alternar}
-              aria-pressed={flutuante.aberta}
-              className={cn(
-                'inline-flex min-h-10 items-center gap-2 rounded-full px-3.5 text-sm font-bold',
-                flutuante.aberta ? 'bg-tinta text-muro' : 'bg-painel-alto text-tinta hover:bg-white/12',
-              )}
-            >
-              <Icone nome="janela" className="size-4" />
-              {flutuante.aberta ? 'Fechar janela flutuante' : 'Janela flutuante'}
-            </button>
-          ) : (
-            <span />
-          )}
-          {comecou && !fim ? (
-            <button
-              type="button"
-              onClick={onRecolher}
-              aria-label="Recolher cronômetro"
-              title="Recolher cronômetro"
-              className="grid size-10 place-items-center rounded-full bg-painel-alto hover:bg-white/12"
-            >
-              <Icone nome="recolher" />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      <div className="-mb-1 flex items-center justify-between gap-2">
+        {flutuante ? (
+          <button
+            type="button"
+            onClick={flutuante.alternar}
+            aria-pressed={flutuante.aberta}
+            className={cn(
+              'inline-flex min-h-10 items-center gap-2 rounded-full px-3.5 text-sm font-bold',
+              flutuante.aberta ? 'bg-tinta text-muro' : 'bg-painel-alto text-tinta hover:bg-white/12',
+            )}
+          >
+            <Icone nome="janela" className="size-4" />
+            {flutuante.aberta ? 'Fechar janela flutuante' : 'Janela flutuante'}
+          </button>
+        ) : (
+          <span />
+        )}
+        <Alternar aberto={aberto} onAlternar={onAlternar} />
+      </div>
       {flutuante?.erro ? (
         <p role="alert" className="rounded-xl bg-cartao/15 px-3 py-2 text-sm font-bold text-cartao">
           {flutuante.erro}
@@ -225,11 +287,10 @@ export function Cronometro({ timer, agora, despachar, onRecolher, flutuante }: P
         ) : (
           <Botao
             className="min-h-16 flex-1 text-xl"
-            disabled={fim || (timer.modo === 'regressivo' && timer.duracaoSeg === 0)}
+            disabled={bloqueado}
             onClick={() => {
-              prepararSom()
-              despachar({ tipo: 'iniciar', agora: Date.now() })
-              onRecolher()
+              iniciar()
+              onAlternar(false)
             }}
           >
             <Icone nome="play" />

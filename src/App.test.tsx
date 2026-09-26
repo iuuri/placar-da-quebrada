@@ -9,6 +9,10 @@ beforeEach(() => {
 
 afterEach(() => vi.useRealTimers())
 
+function abrirAjustes() {
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir ajustes do cronômetro' }))
+}
+
 function tempo() {
   return screen.getByRole('timer').querySelector('p')!.textContent
 }
@@ -16,6 +20,7 @@ function tempo() {
 describe('App', () => {
   it('conta, pausa e continua salvo depois de recarregar', () => {
     const { unmount } = render(<App />)
+    abrirAjustes()
     fireEvent.click(screen.getByRole('radio', { name: 'Progressivo' }))
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
     act(() => vi.advanceTimersByTime(65_000))
@@ -31,6 +36,7 @@ describe('App', () => {
 
   it('regressivo é o padrão, para sozinho no zero e aceita acréscimo', () => {
     render(<App />)
+    abrirAjustes()
     expect(screen.getByRole('radio', { name: 'Regressivo' })).toHaveAttribute('aria-checked', 'true')
     fireEvent.change(screen.getByLabelText('Minutos'), { target: { value: '0' } })
     fireEvent.change(screen.getByLabelText('Segundos'), { target: { value: '3' } })
@@ -203,29 +209,39 @@ describe('App', () => {
     expect(tempo()).toBe('25:00')
   })
 
-  it('cronômetro recolhe ao iniciar, reabre pelo botão e abre sozinho no fim do tempo', () => {
+  it('cronômetro fica em cima do placar, fechado (só o tempo), abre e fecha pela seta e abre sozinho no fim', () => {
     render(<App />)
+    const cronometro = screen.getByRole('region', { name: 'Cronômetro' })
+    const placar = screen.getByRole('region', { name: 'Placar' })
+    expect(cronometro.compareDocumentPosition(placar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // fechado: tempo e iniciar, sem os ajustes
+    expect(tempo()).toBe('25:00')
+    expect(screen.queryByLabelText('Minutos')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Abrir ajustes do cronômetro' })).toHaveAttribute('aria-expanded', 'false')
+
+    abrirAjustes()
     fireEvent.change(screen.getByLabelText('Minutos'), { target: { value: '0' } })
     fireEvent.change(screen.getByLabelText('Segundos'), { target: { value: '5' } })
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
     act(() => vi.advanceTimersByTime(1_000))
+    // iniciar fecha os ajustes; pausar e continuar funcionam fechado
+    expect(screen.queryByLabelText('Tipo de contagem')).not.toBeInTheDocument()
+    expect(tempo()).toBe('00:04')
+    fireEvent.click(screen.getByRole('button', { name: 'Pausar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
 
-    expect(screen.getByRole('region', { name: 'Cronômetro resumido' })).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: 'Cronômetro' })).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir cronômetro completo' }))
-    expect(screen.getByRole('region', { name: 'Cronômetro' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Recolher cronômetro' }))
-    expect(screen.getByRole('region', { name: 'Cronômetro resumido' })).toBeInTheDocument()
+    abrirAjustes()
+    expect(screen.getByRole('radiogroup', { name: 'Tipo de contagem' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar ajustes do cronômetro' }))
+    expect(screen.queryByRole('radiogroup', { name: 'Tipo de contagem' })).not.toBeInTheDocument()
 
     act(() => vi.advanceTimersByTime(5_000))
-    expect(screen.getByRole('region', { name: 'Cronômetro' })).toBeInTheDocument()
+    // fim do tempo: abre sozinho para dar acréscimo
     fireEvent.click(screen.getByRole('button', { name: 'Dar 1 minuto de acréscimo' }))
-    // continua aberto para dar mais acréscimo, até tocar em Continuar
-    expect(screen.getByRole('region', { name: 'Cronômetro' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Dar 1 minuto de acréscimo' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     act(() => vi.advanceTimersByTime(1_000))
-    expect(screen.getByRole('region', { name: 'Cronômetro resumido' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dar 1 minuto de acréscimo' })).not.toBeInTheDocument()
   })
 
   it('botão Súmula abre a tela com o resumo e a opção de PDF', () => {

@@ -11,8 +11,8 @@ type Props = {
   onAbrir: () => void
 }
 
-// Cronômetro resumido: fica no topo, ao lado da logo, depois que o jogo começa.
-// Libera a tela para o placar e as anotações e continua visível ao rolar a página.
+// Cronômetro resumido: aparece no topo, ao lado da logo, quando o cronômetro sai da tela (rolando a página).
+// A seta leva de volta ao cronômetro, em cima do placar.
 export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
   const alem = alemDoTempoMs(timer, agora)
   const detalhe =
@@ -74,11 +74,11 @@ export function CronometroMini({ timer, agora, despachar, onAbrir }: Props) {
       <button
         type="button"
         onClick={onAbrir}
-        aria-label="Abrir cronômetro completo"
-        title="Abrir cronômetro completo"
+        aria-label="Ir para o cronômetro"
+        title="Ir para o cronômetro"
         className={cn(botao, 'hover:bg-white/10')}
       >
-        <Icone nome="expandir" />
+        <Icone nome="recolher" />
       </button>
     </section>
   )

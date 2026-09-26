@@ -13,7 +13,10 @@ export type Nota = {
   minuto: number
   texto: string
   lado: Lado | null // time do registro; null = geral (só em anotações)
+  periodo?: Periodo // tempo do jogo em que aconteceu (ausente = 1º, registros de versões antigas)
 }
+
+export type Periodo = 1 | 2
 
 // Punição de 2 minutos em andamento. Anda junto com o cronômetro do jogo:
 // se o jogo pausa, a punição pausa. O registro fica nas notas (mesmo id).
@@ -29,6 +32,11 @@ export const PUNICAO_MS = 2 * 60_000
 
 export type Estado = {
   timer: EstadoTimer
+  // Jogo em 1 ou 2 tempos. Cada tempo tem a duração do cronômetro; o minuto recomeça no 2º tempo.
+  tempos: 1 | 2
+  periodo: Periodo
+  // Quanto durou o 1º tempo (minutos, com acréscimo): usado na linha do tempo da súmula.
+  fimPrimeiroTempoMin: number | null
   placar: Record<Lado, { nome: string; gols: number; faltas: number }>
   notas: Nota[] // mais recente primeiro
   punicoes: Punicao[] // em andamento
@@ -36,6 +44,9 @@ export type Estado = {
 
 export const ESTADO_INICIAL: Estado = {
   timer: { modo: 'regressivo', duracaoSeg: 25 * 60, acrescimoSeg: 0, rodando: false, iniciadoEm: null, acumuladoMs: 0 },
+  tempos: 2,
+  periodo: 1,
+  fimPrimeiroTempoMin: null,
   placar: { casa: { nome: 'Time A', gols: 0, faltas: 0 }, visitante: { nome: 'Time B', gols: 0, faltas: 0 } },
   notas: [],
   punicoes: [],
@@ -61,6 +72,11 @@ export type Acao =
   | { tipo: 'removerNota'; id: string }
   | { tipo: 'encerrarPunicao'; id: string }
   | { tipo: 'resetarTudo' }
+  | { tipo: 'definirTempos'; tempos: 1 | 2 }
+  // Fecha o 1º tempo (com o tempo parado): o cronômetro zera para o 2º tempo, que começa quando tocar em Iniciar.
+  | { tipo: 'encerrarTempo' }
+  // Desfazer: volta a um estado guardado antes da ação.
+  | { tipo: 'restaurar'; estado: Estado }
 
 function somarGols(estado: Estado, lado: Lado, delta: number): Estado {
   const atual = estado.placar[lado]
@@ -97,7 +113,7 @@ export function reducer(estado: Estado, acao: Acao): Estado {
       }
     case 'marcarGol': {
       if (estado.placar[acao.lado].gols >= 99) return estado
-      const nota: Nota = { id: acao.id, tipo: 'gol', minuto: acao.minuto, texto: '', lado: acao.lado }
+      const nota: Nota = { id: acao.id, tipo: 'gol', minuto: acao.minuto, texto: '', lado: acao.lado, periodo: estado.periodo }
       return { ...somarGols(estado, acao.lado, 1), notas: [nota, ...estado.notas] }
     }
     case 'tirarGol': {
@@ -116,7 +132,7 @@ export function reducer(estado: Estado, acao: Acao): Estado {
       }
     }
     case 'adicionarNota': {
-      const nota = { ...acao.nota, texto: acao.nota.texto.trim().slice(0, MAX_TEXTO_NOTA) }
+      const nota = { ...acao.nota, texto: acao.nota.texto.trim().slice(0, MAX_TEXTO_NOTA), periodo: estado.periodo }
       // Só anotação geral pode ficar sem time.
       if (nota.tipo !== 'nota' && nota.lado === null) return estado
       const punicoes =
@@ -154,6 +170,29 @@ export function reducer(estado: Estado, acao: Acao): Estado {
       return { ...estado, punicoes: estado.punicoes.filter((p) => p.id !== acao.id) }
     case 'resetarTudo':
       return ESTADO_INICIAL
+    case 'definirTempos':
+      // Só antes de o jogo começar.
+      if (estado.periodo !== 1 || estado.timer.rodando || estado.timer.acumuladoMs > 0) return estado
+      return { ...estado, tempos: acao.tempos }
+    case 'encerrarTempo': {
+      if (estado.tempos !== 2 || estado.periodo !== 1 || estado.timer.rodando || estado.timer.acumuladoMs === 0) return estado
+      const jogadoMs = estado.timer.acumuladoMs
+      // Punições em andamento continuam no 2º tempo com o que faltava cumprir.
+      const punicoes = estado.punicoes.map((p) => ({
+        ...p,
+        inicioMs: 0,
+        duracaoMs: Math.max(0, p.duracaoMs - (jogadoMs - p.inicioMs)),
+      }))
+      return {
+        ...estado,
+        timer: zerar(estado.timer),
+        periodo: 2,
+        fimPrimeiroTempoMin: Math.max(1, Math.ceil(jogadoMs / 60_000)),
+        punicoes,
+      }
+    }
+    case 'restaurar':
+      return acao.estado
   }
 }
 
@@ -189,6 +228,9 @@ export function carregar(): Estado {
     // Mescla com o inicial para aguentar versões antigas do que foi salvo.
     return {
       timer: { ...ESTADO_INICIAL.timer, ...salvo.timer },
+      tempos: salvo.tempos === 1 ? 1 : 2,
+      periodo: salvo.periodo === 2 ? 2 : 1,
+      fimPrimeiroTempoMin: typeof salvo.fimPrimeiroTempoMin === 'number' ? salvo.fimPrimeiroTempoMin : null,
       placar: {
         casa: { ...ESTADO_INICIAL.placar.casa, ...salvo.placar?.casa },
         visitante: { ...ESTADO_INICIAL.placar.visitante, ...salvo.placar?.visitante },

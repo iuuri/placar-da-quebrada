@@ -14,7 +14,7 @@ function abrirAjustes() {
 }
 
 function tempo() {
-  return screen.getByRole('timer').querySelector('p')!.textContent
+  return screen.getByRole('timer').querySelector('p.font-display')!.textContent
 }
 
 describe('App', () => {
@@ -44,7 +44,7 @@ describe('App', () => {
     act(() => vi.advanceTimersByTime(4_000))
 
     expect(tempo()).toBe('00:00')
-    expect(screen.getByText(/Fim do tempo!/)).toBeInTheDocument()
+    expect(screen.getByText(/Fim do 1º tempo!/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Pausar' })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Dar 1 minuto de acréscimo' }))
@@ -251,10 +251,71 @@ describe('App', () => {
     const tela = screen.getByRole('dialog', { name: 'Súmula do jogo' })
     expect(within(tela).getByRole('table', { name: 'Resumo por time' })).toBeInTheDocument()
     expect(within(tela).getByRole('listitem')).toHaveTextContent('Amarelo · Time B · Zé')
-    expect(within(tela).getByRole('img', { name: /Linha do tempo: 0' Amarelo Time B Zé/ })).toBeInTheDocument()
+    expect(within(tela).getByRole('img', { name: /Linha do tempo: 0' 1ºT Amarelo Time B Zé/ })).toBeInTheDocument()
     expect(within(tela).getByRole('table', { name: 'Gols e cartões por jogador' })).toHaveTextContent('Zé')
     expect(within(tela).getByRole('button', { name: /PDF/ })).toBeInTheDocument()
     fireEvent.click(within(tela).getByRole('button', { name: 'Fechar' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('jogo em 2 tempos: encerra o 1º, o minuto recomeça e os registros dizem o tempo', () => {
+    render(<App />)
+    abrirAjustes()
+    expect(screen.getByRole('radio', { name: '2 tempos' })).toHaveAttribute('aria-checked', 'true')
+    fireEvent.change(screen.getByLabelText('Minutos'), { target: { value: '1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
+    act(() => vi.advanceTimersByTime(30_000))
+    registrar(/Amarelo/, 'Time A', 'Zé')
+    expect(blocos()[0]).toHaveTextContent("1'1ºT")
+
+    // fim do 1º tempo: abre os ajustes com o botão de encerrar
+    act(() => vi.advanceTimersByTime(31_000))
+    expect(screen.getByText(/Fim do 1º tempo!/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar 1º tempo' }))
+    expect(screen.getByRole('region', { name: 'Cronômetro' })).toHaveTextContent('2º tempo · Intervalo')
+    expect(tempo()).toBe('01:00')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar 2º tempo' }))
+    act(() => vi.advanceTimersByTime(20_000))
+    fireEvent.click(screen.getByRole('button', { name: 'Vermelho' }))
+    expect(screen.getByRole('dialog', { name: /Vermelho aos 1' do 2º tempo/ })).toBeInTheDocument()
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Time B' }))
+    expect(blocos()[0]).toHaveTextContent("1'2ºT")
+    expect(blocos()[1]).toHaveTextContent("1'1ºT")
+  })
+
+  it('jogo de 1 tempo só não mostra 1º/2º tempo', () => {
+    render(<App />)
+    abrirAjustes()
+    fireEvent.click(screen.getByRole('radio', { name: '1 tempo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar' }))
+    registrar(/Amarelo/, 'Time A')
+    expect(blocos()[0]).not.toHaveTextContent('ºT')
+    expect(screen.queryByRole('button', { name: 'Encerrar 1º tempo' })).not.toBeInTheDocument()
+  })
+
+  it('desfazer: volta falta, registro apagado e até o reset', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Falta de Time B' }))
+    expect(screen.getByText('Falta de Time B marcada')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Desfazer' }))
+    expect(screen.getByLabelText('Faltas de Time B')).toHaveTextContent('0')
+    expect(screen.queryByRole('button', { name: 'Desfazer' })).not.toBeInTheDocument()
+
+    registrar(/Amarelo/, 'Time A', 'Zé')
+    expect(screen.getByText('Amarelo de Time A registrado')).toBeInTheDocument()
+    fireEvent.click(within(blocos()[0]).getByRole('button', { name: 'Apagar' }))
+    fireEvent.click(within(blocos()[0]).getByRole('button', { name: 'Sim, apagar' }))
+    expect(screen.queryByRole('list', { name: /Anotações/ })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Desfazer' }))
+    expect(blocos()[0]).toHaveTextContent('Zé')
+
+    marcarGol('Time A')
+    fireEvent.click(screen.getByRole('button', { name: 'Resetar tudo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sim, zerar tudo' }))
+    expect(screen.getByLabelText('Gols de Time A')).toHaveTextContent('0')
+    fireEvent.click(screen.getByRole('button', { name: 'Desfazer' }))
+    expect(screen.getByLabelText('Gols de Time A')).toHaveTextContent('1')
+    expect(blocos()).toHaveLength(2)
   })
 })

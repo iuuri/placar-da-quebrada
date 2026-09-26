@@ -42,7 +42,7 @@ describe('estatísticas da súmula', () => {
   })
 
   it('gols por faixa de 5 minutos em jogo curto', () => {
-    const faixas = golsPorFaixa(jogo(notas).notas, 25)
+    const faixas = golsPorFaixa(jogo(notas), 0)
     expect(faixas.map((f) => `${f.inicio}-${f.fim}:${f.casa}/${f.visitante}`)).toEqual([
       '0-5:1/0',
       '5-10:0/0',
@@ -50,7 +50,7 @@ describe('estatísticas da súmula', () => {
       '15-20:0/0',
       '20-25:1/0',
     ])
-    expect(golsPorFaixa([], 50)).toHaveLength(5) // de 10 em 10
+    expect(golsPorFaixa(jogo([], { timer: { ...ESTADO_INICIAL.timer, duracaoSeg: 3000 } }), 0)).toHaveLength(5) // de 10 em 10
   })
 
   it('agrupa o mesmo jogador escrito de jeitos diferentes; artilheiro primeiro; trocas ficam de fora', () => {
@@ -64,7 +64,7 @@ describe('estatísticas da súmula', () => {
 
   it('destaques: primeiro gol, maior tempo sem gol, artilheiro e fair play', () => {
     expect(destaques(jogo(notas), 0)).toEqual([
-      { titulo: 'Primeiro gol', valor: "3'", detalhe: 'Unidos · Zé' },
+      { titulo: 'Primeiro gol', valor: "3' 1ºT", detalhe: 'Unidos · Zé' },
       { titulo: 'Maior tempo sem gol', valor: '10 min' },
       { titulo: 'Artilheiro', valor: 'Zé', detalhe: '2 gols · Unidos' },
       { titulo: 'Fair play', valor: 'Unidos', detalhe: 'Unidos 0 pt · São Jorge 4 pt' },

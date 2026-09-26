@@ -24,6 +24,8 @@ export function textosFlutuante(estado: Estado, agora: number): TextosFlutuante 
     const proxima = formatar(Math.min(...ativas), true)
     detalhe = [detalhe, `Punição ${proxima}${ativas.length > 1 ? ` (+${ativas.length - 1})` : ''}`].filter(Boolean).join(' · ')
   }
+  // Jogo de 2 tempos: diz em qual está.
+  if (estado.tempos === 2) detalhe = [`${estado.periodo}ºT`, detalhe].filter(Boolean).join(' · ')
 
   return {
     tempo: formatar(exibidoMs(timer, agora), timer.modo === 'regressivo'),

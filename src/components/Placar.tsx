@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { MAX_TEXTO_NOTA, type Acao, type Estado, type Lado } from '@/estado'
+import { MAX_TEXTO_NOTA, type Acao, type Periodo, type Estado, type Lado } from '@/estado'
 import { novoId } from '@/lib/utils'
 import { Botao } from './Botao'
 import { Dialogo } from './Dialogo'
 import { Icone, IconeTipo } from './Icone'
 
-type Props = { placar: Estado['placar']; minuto: number; despachar: (a: Acao) => void }
+type Props = { placar: Estado['placar']; minuto: number; despachar: (a: Acao) => void; periodo: Periodo | null }
 
 type GolAberto = { id: string; lado: Lado; minuto: number }
 
@@ -90,7 +90,7 @@ function Time({ lado, nome, gols, faltas, despachar, onGol }: TimeProps) {
   )
 }
 
-export function Placar({ placar, minuto, despachar }: Props) {
+export function Placar({ placar, minuto, despachar, periodo }: Props) {
   const [gol, setGol] = useState<GolAberto | null>(null)
   const nomes = { casa: placar.casa.nome || 'Time A', visitante: placar.visitante.nome || 'Time B' }
 
@@ -113,6 +113,7 @@ export function Placar({ placar, minuto, despachar }: Props) {
       {gol ? (
         <DialogoGol
           gol={gol}
+          periodo={periodo}
           nome={nomes[gol.lado]}
           onSalvar={(texto) => {
             if (texto.trim()) despachar({ tipo: 'editarNota', id: gol.id, texto, lado: gol.lado })
@@ -130,11 +131,13 @@ export function Placar({ placar, minuto, despachar }: Props) {
 
 function DialogoGol({
   gol,
+  periodo,
   nome,
   onSalvar,
   onDesfazer,
 }: {
   gol: GolAberto
+  periodo: Periodo | null
   nome: string
   onSalvar: (texto: string) => void
   onDesfazer: () => void
@@ -145,7 +148,7 @@ function DialogoGol({
       titulo={
         <span className="flex items-center gap-2">
           <IconeTipo tipo="gol" className="size-7 text-gramado" />
-          Gol de {nome} aos {gol.minuto}'
+          Gol de {nome} aos {gol.minuto}'{periodo ? ` do ${periodo}º tempo` : ''}
         </span>
       }
       // Fechar tocando fora ou no Esc mantém o gol (e o nome, se já foi digitado).

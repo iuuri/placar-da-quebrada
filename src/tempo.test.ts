@@ -125,7 +125,7 @@ describe('gols', () => {
   it('gol pelo placar soma e cria o registro; editar põe o jogador sem trocar o time', () => {
     let e = reducer(ESTADO_INICIAL, { tipo: 'marcarGol', lado: 'visitante', id: 'g1', minuto: 7 })
     expect(e.placar.visitante.gols).toBe(1)
-    expect(e.notas[0]).toEqual({ id: 'g1', tipo: 'gol', minuto: 7, texto: '', lado: 'visitante' })
+    expect(e.notas[0]).toEqual({ id: 'g1', tipo: 'gol', minuto: 7, texto: '', lado: 'visitante', periodo: 1 })
     e = reducer(e, { tipo: 'editarNota', id: 'g1', texto: ' Zé ', lado: 'casa' })
     expect(e.notas[0]).toMatchObject({ texto: 'Zé', lado: 'visitante' })
   })
@@ -207,5 +207,37 @@ describe('registros por time e punições', () => {
     expect(restantePunicaoMs(p, t, 40_000)).toBe(90_000)
     expect(restantePunicaoMs(p, pausar(t, 40_000), 999_000)).toBe(90_000)
     expect(restantePunicaoMs(p, t, 200_000)).toBe(0)
+  })
+})
+
+describe('dois tempos', () => {
+  it('encerrar o 1º tempo zera o cronômetro, guarda quanto durou e leva as punições com o que falta', () => {
+    let e = reducer(ESTADO_INICIAL, { tipo: 'definirModo', modo: 'progressivo' })
+    e = reducer(e, { tipo: 'iniciar', agora: 0 })
+    e = reducer(e, {
+      tipo: 'adicionarNota',
+      nota: { id: 'p', tipo: 'punicao', minuto: 25, texto: 'Tião', lado: 'casa' },
+      decorridoMs: 25 * 60_000 + 30_000,
+    })
+    // não encerra com o tempo correndo
+    expect(reducer(e, { tipo: 'encerrarTempo' })).toBe(e)
+    e = reducer(e, { tipo: 'pausar', agora: 26 * 60_000 })
+    e = reducer(e, { tipo: 'encerrarTempo' })
+    expect(e).toMatchObject({ periodo: 2, fimPrimeiroTempoMin: 26 })
+    expect(e.timer).toMatchObject({ acumuladoMs: 0, rodando: false, acrescimoSeg: 0 })
+    expect(e.punicoes[0]).toMatchObject({ inicioMs: 0, duracaoMs: 90_000 })
+
+    e = reducer(e, { tipo: 'marcarGol', lado: 'visitante', id: 'g', minuto: 3 })
+    expect(e.notas[0].periodo).toBe(2)
+    expect(e.notas[1].periodo).toBe(1)
+  })
+
+  it('1 ou 2 tempos só se escolhe antes de começar', () => {
+    let e = reducer(ESTADO_INICIAL, { tipo: 'definirTempos', tempos: 1 })
+    expect(e.tempos).toBe(1)
+    e = reducer(e, { tipo: 'iniciar', agora: 0 })
+    e = reducer(e, { tipo: 'pausar', agora: 1000 })
+    expect(reducer(e, { tipo: 'definirTempos', tempos: 2 }).tempos).toBe(1)
+    expect(reducer(e, { tipo: 'encerrarTempo' })).toBe(e) // jogo de 1 tempo não tem 2º tempo
   })
 })

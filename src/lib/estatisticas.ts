@@ -1,4 +1,4 @@
-import type { Estado, Lado, Nota, TipoNota } from '@/estado'
+import type { Estado, Lado, Nota, Periodo, TipoNota } from '@/estado'
 import { decorridoMs, minutoDeJogo } from '@/tempo'
 
 // Estatísticas da súmula, calculadas só com o que já é registrado no jogo (placar, faltas e registros).
@@ -38,13 +38,29 @@ export function proporcao(l: LinhaComparativo): { casa: number; visitante: numbe
   return total === 0 ? null : { casa: l.casa / total, visitante: l.visitante / total }
 }
 
-// Tamanho do eixo da linha do tempo, em minutos: o tempo de jogo, ou até onde o jogo (ou algum registro) já foi.
-export function duracaoEixo(estado: Estado, agora: number): number {
+export const periodoDe = (n: Nota): Periodo => n.periodo ?? 1
+
+// Quantos minutos cada tempo ocupa no eixo dos gráficos. O 1º tempo, depois de encerrado, usa o quanto durou;
+// o tempo em andamento usa o previsto (com acréscimo), ou até onde o jogo (ou algum registro) já foi.
+export function duracaoTempo(estado: Estado, agora: number, periodo: Periodo): number {
   const { timer, notas } = estado
-  const previsto = Math.ceil((timer.duracaoSeg + timer.acrescimoSeg) / 60)
-  const jogado = Math.ceil(decorridoMs(timer, agora) / 60_000)
-  const ultimo = notas.reduce((m, n) => Math.max(m, n.minuto), 0)
+  if (periodo === 1 && estado.periodo === 2) return estado.fimPrimeiroTempoMin ?? Math.max(1, Math.ceil(timer.duracaoSeg / 60))
+  const emAndamento = estado.periodo === periodo
+  const previsto = Math.ceil((timer.duracaoSeg + (emAndamento ? timer.acrescimoSeg : 0)) / 60)
+  const jogado = emAndamento ? Math.ceil(decorridoMs(timer, agora) / 60_000) : 0
+  const ultimo = notas.filter((n) => periodoDe(n) === periodo).reduce((m, n) => Math.max(m, n.minuto), 0)
   return Math.max(previsto, jogado, ultimo, 1)
+}
+
+// Tamanho do eixo da linha do tempo, em minutos (os dois tempos em sequência).
+export function duracaoEixo(estado: Estado, agora: number): number {
+  const primeiro = duracaoTempo(estado, agora, 1)
+  return estado.periodo === 2 ? primeiro + duracaoTempo(estado, agora, 2) : primeiro
+}
+
+// Minuto do registro no eixo: o 2º tempo começa onde o 1º terminou.
+export function minutoLinha(n: Nota, estado: Estado, agora: number): number {
+  return periodoDe(n) === 2 ? duracaoTempo(estado, agora, 1) + n.minuto : n.minuto
 }
 
 // Eventos da linha do tempo (sem anotações gerais), do mais antigo para o mais recente.
@@ -52,23 +68,27 @@ export function eventosLinhaDoTempo(notas: Nota[]): (Nota & { lado: Lado })[] {
   return [...notas]
     .reverse()
     .filter((n): n is Nota & { lado: Lado } => n.lado !== null && n.tipo !== 'nota')
-    .sort((a, b) => a.minuto - b.minuto)
+    .sort((a, b) => periodoDe(a) - periodoDe(b) || a.minuto - b.minuto)
 }
 
-export type Faixa = { inicio: number; fim: number; casa: number; visitante: number }
+export type Faixa = { periodo: Periodo; inicio: number; fim: number; casa: number; visitante: number }
 
-// Gols por faixa de tempo: de 5 em 5 minutos em jogos curtos, de 10 em 10 nos longos.
-export function golsPorFaixa(notas: Nota[], eixoMin: number): Faixa[] {
-  const passo = eixoMin <= 30 ? 5 : 10
-  const faixas: Faixa[] = []
-  for (let inicio = 0; inicio < eixoMin; inicio += passo) faixas.push({ inicio, fim: inicio + passo, casa: 0, visitante: 0 })
-  for (const n of notas) {
-    if (n.tipo !== 'gol' || !n.lado) continue
-    // Gol no minuto 10 (de 1 a 10) entra na faixa 0–10: o minuto do jogo é "o minuto em andamento".
-    const i = Math.min(faixas.length - 1, Math.max(0, Math.ceil(n.minuto / passo) - 1))
-    faixas[i][n.lado]++
-  }
-  return faixas
+// Gols por faixa de tempo, em cada tempo do jogo: de 5 em 5 minutos em tempos curtos, de 10 em 10 nos longos.
+export function golsPorFaixa(estado: Estado, agora: number): Faixa[] {
+  const periodos: Periodo[] = estado.periodo === 2 ? [1, 2] : [1]
+  return periodos.flatMap((periodo) => {
+    const eixo = duracaoTempo(estado, agora, periodo)
+    const passo = eixo <= 30 ? 5 : 10
+    const faixas: Faixa[] = []
+    for (let inicio = 0; inicio < eixo; inicio += passo) faixas.push({ periodo, inicio, fim: inicio + passo, casa: 0, visitante: 0 })
+    for (const n of estado.notas) {
+      if (n.tipo !== 'gol' || !n.lado || periodoDe(n) !== periodo) continue
+      // Gol no minuto 10 (de 1 a 10) entra na faixa 0–10: o minuto do jogo é "o minuto em andamento".
+      const i = Math.min(faixas.length - 1, Math.max(0, Math.ceil(n.minuto / passo) - 1))
+      faixas[i][n.lado]++
+    }
+    return faixas
+  })
 }
 
 export type Jogador = {
@@ -122,11 +142,20 @@ export function destaques(estado: Estado, agora: number): Destaque[] {
   const gols = eventosLinhaDoTempo(notas).filter((n) => n.tipo === 'gol')
   const lista: Destaque[] = []
 
+  // Placar do intervalo, quando o jogo já está no 2º tempo.
+  if (estado.tempos === 2 && estado.periodo === 2) {
+    const noPrimeiro = (lado: Lado) => gols.filter((g) => g.lado === lado && periodoDe(g) === 1).length
+    lista.push({ titulo: 'Placar do 1º tempo', valor: `${noPrimeiro('casa')} × ${noPrimeiro('visitante')}`, detalhe: `${nome('casa')} × ${nome('visitante')}` })
+  }
+
   if (gols.length > 0) {
     const primeiro = gols[0]
-    lista.push({ titulo: 'Primeiro gol', valor: `${primeiro.minuto}'`, detalhe: [nome(primeiro.lado), primeiro.texto].filter(Boolean).join(' · ') })
-    // Maior tempo sem gol: entre o início, cada gol e o minuto atual do jogo.
-    const marcos = [0, ...gols.map((g) => g.minuto), Math.max(minutoDeJogo(timer, agora), gols.at(-1)!.minuto)]
+    const minuto = rotuloMinuto(primeiro, estado)
+    lista.push({ titulo: 'Primeiro gol', valor: minuto, detalhe: [nome(primeiro.lado), primeiro.texto].filter(Boolean).join(' · ') })
+    // Maior tempo sem gol: entre o início, cada gol e o minuto atual do jogo (os dois tempos em sequência).
+    const linha = (n: Nota) => minutoLinha(n, estado, agora)
+    const atual = (estado.periodo === 2 ? duracaoTempo(estado, agora, 1) : 0) + minutoDeJogo(timer, agora)
+    const marcos = [0, ...gols.map(linha), Math.max(atual, linha(gols.at(-1)!))]
     let maior = 0
     for (let i = 1; i < marcos.length; i++) maior = Math.max(maior, marcos[i] - marcos[i - 1])
     if (maior > 0) lista.push({ titulo: 'Maior tempo sem gol', valor: `${maior} min` })
@@ -144,4 +173,9 @@ export function destaques(estado: Estado, agora: number): Destaque[] {
     lista.push({ titulo: 'Fair play', valor: pc === pv ? 'Empate' : nome(pc < pv ? 'casa' : 'visitante'), detalhe })
   }
   return lista
+}
+
+// Minuto como aparece para quem lê: em jogo de 2 tempos, diz de qual tempo ("12' 2ºT").
+export function rotuloMinuto(n: Nota, estado: Pick<Estado, 'tempos'>): string {
+  return estado.tempos === 2 ? `${n.minuto}' ${periodoDe(n)}ºT` : `${n.minuto}'`
 }

@@ -6,7 +6,10 @@ import {
   comparativo,
   destaques,
   duracaoEixo,
+  duracaoTempo,
   eventosLinhaDoTempo,
+  minutoLinha,
+  rotuloMinuto,
   golsPorFaixa,
   porJogador,
   proporcao,
@@ -138,9 +141,13 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
   doc.line(L, y - 5, L + largura, y - 5)
   linha('Faltas', `${nomeCasa}: ${casa.faltas}   |   ${nomeVisitante}: ${visitante.faltas}`)
   linha('Cronômetro', t.modo === 'regressivo' ? 'Regressivo' : 'Progressivo')
-  linha('Tempo de jogo', t.duracaoSeg > 0 ? formatar(t.duracaoSeg * 1000) : 'Sem limite')
+  const duracao = t.duracaoSeg > 0 ? formatar(t.duracaoSeg * 1000) : 'Sem limite'
+  linha('Tempo de jogo', estado.tempos === 2 ? `2 tempos de ${duracao}` : duracao)
+  if (estado.tempos === 2) {
+    linha('Andamento', estado.periodo === 2 ? `2º tempo (1º tempo durou ${estado.fimPrimeiroTempoMin ?? '-'} min)` : '1º tempo')
+  }
   linha('Acréscimo', t.acrescimoSeg > 0 ? formatar(t.acrescimoSeg * 1000) : 'Nenhum')
-  linha('Tempo jogado', formatar(decorridoMs(t, agora)))
+  linha(estado.tempos === 2 ? `Tempo jogado (${estado.periodo}º)` : 'Tempo jogado', formatar(decorridoMs(t, agora)))
 
   // Estatísticas: mesmas da tela (destaques, comparativo, linha do tempo, gols por faixa, jogadores)
   const nomes = { casa: nomeCasa, visitante: nomeVisitante }
@@ -184,8 +191,10 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
   if (lista.length > 0) {
     titulo('Destaques')
     const w = (largura - 3 * 4) / 4
+    // 4 quadros por linha
     lista.forEach((d, i) => {
-      const x = L + i * (w + 4)
+      if (i > 0 && i % 4 === 0) y += 24
+      const x = L + (i % 4) * (w + 4)
       doc.setFillColor(243, 245, 248)
       doc.roundedRect(x, y - 4, w, 20, 2, 2, 'F')
       doc.setTextColor(...SUAVE)
@@ -244,8 +253,9 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
   // Linha do tempo: um time em cima, o outro embaixo
   const eventos = eventosLinhaDoTempo(estado.notas)
   if (eventos.length > 0) {
+    // título e gráfico sempre na mesma página
+    espaco(62)
     titulo('Linha do tempo')
-    espaco(44)
     const eixo = duracaoEixo(estado, agora)
     const passo = eixo <= 30 ? 5 : 10
     const x0 = L + 4
@@ -256,16 +266,30 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
     doc.setLineWidth(0.2)
     doc.setFontSize(8)
     doc.setTextColor(...SUAVE)
-    for (let m = 0; m <= eixo; m += passo) {
-      doc.line(px(m), y, px(m), y + 32)
-      doc.text(`${m}'`, px(m), y + 36, { align: 'center' })
+    // No 2º tempo o eixo segue depois do 1º, e os minutos recomeçam do zero.
+    const dois = estado.periodo === 2
+    const fimPrimeiro = duracaoTempo(estado, agora, 1)
+    const tick = (pos: number, rotulo: string) => {
+      doc.line(px(pos), y, px(pos), y + 32)
+      doc.text(rotulo, px(pos), y + 36, { align: 'center' })
+    }
+    for (let m = 0; m <= (dois ? fimPrimeiro - 1 : eixo); m += passo) tick(m, `${m}'`)
+    if (dois) {
+      for (let m = passo; fimPrimeiro + m <= eixo; m += passo) tick(fimPrimeiro + m, `${m}'`)
+      doc.setDrawColor(...SUAVE)
+      doc.setLineWidth(0.4)
+      doc.line(px(fimPrimeiro), y - 3, px(fimPrimeiro), y + 33)
+      doc.setFont('helvetica', 'bold')
+      doc.text('1º tempo', px(fimPrimeiro) - 1.5, y - 0.5, { align: 'right' })
+      doc.text('2º tempo', px(fimPrimeiro) + 1.5, y - 0.5)
+      doc.setFont('helvetica', 'normal')
     }
     doc.setDrawColor(...SUAVE)
     doc.setLineWidth(0.6)
     doc.line(x0, ey, x1, ey)
     const colocados: Record<Lado, number[]> = { casa: [], visitante: [] }
     for (const n of eventos) {
-      const cx = px(n.minuto)
+      const cx = px(minutoLinha(n, estado, agora))
       const nivel = Math.min(2, colocados[n.lado].filter((o) => Math.abs(o - cx) < 4).length)
       colocados[n.lado].push(cx)
       const d = 6 + nivel * 4.5
@@ -311,11 +335,12 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
   }
 
   // Gols por faixa de tempo
-  const faixas = golsPorFaixa(estado.notas, duracaoEixo(estado, agora))
+  const faixas = golsPorFaixa(estado, agora)
+  const faixasEmDoisTempos = faixas.some((f) => f.periodo === 2)
   const maior = Math.max(0, ...faixas.flatMap((f) => [f.casa, f.visitante]))
   if (maior > 0) {
+    espaco(52)
     titulo('Gols por tempo de jogo')
-    espaco(34)
     const alturaMax = 20
     const base = y + alturaMax + 4
     const slot = largura / faixas.length
@@ -341,13 +366,24 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8)
       doc.text(`${f.inicio}-${f.fim}'`, cx, base + 4.5, { align: 'center' })
+      // início do 2º tempo: linha divisória e nome de cada tempo
+      if (faixasEmDoisTempos && (i === 0 || f.periodo !== faixas[i - 1].periodo)) {
+        const qtd = faixas.filter((o) => o.periodo === f.periodo).length
+        doc.setFont('helvetica', 'bold')
+        doc.text(`${f.periodo}º tempo`, L + slot * i + (slot * qtd) / 2, base + 9.5, { align: 'center' })
+        if (i > 0) {
+          doc.setDrawColor(...SUAVE)
+          doc.line(L + slot * i, base - alturaMax - 4, L + slot * i, base)
+        }
+      }
     })
-    y = base + 14
+    y = base + (faixasEmDoisTempos ? 18 : 14)
   }
 
   // Jogadores (gols, cartões e punições por nome)
   const jogadores = porJogador(estado.notas)
   if (jogadores.length > 0) {
+    espaco(30)
     titulo('Jogadores')
     doc.setFontSize(9)
     doc.setTextColor(...SUAVE)
@@ -405,10 +441,10 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
     doc.setFillColor(...TIPOS[n.tipo].rgb)
     doc.rect(L, y - 3.8, 3, 4.5, 'F')
     doc.setFont('helvetica', 'bold')
-    doc.text(`${n.minuto}'`, L + 6, y)
-    doc.text(ROTULO_TIPO[n.tipo], L + 18, y)
+    doc.text(rotuloMinuto(n, estado), L + 6, y)
+    doc.text(ROTULO_TIPO[n.tipo], L + (estado.tempos === 2 ? 22 : 18), y)
     doc.setFont('helvetica', 'normal')
-    doc.text(time, L + 56, y, { maxWidth: 38 })
+    doc.text(time, L + 60, y, { maxWidth: 36 })
     doc.text(linhas, L + 98, y)
     y += altura
   }

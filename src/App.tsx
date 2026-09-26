@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Anotacoes } from './components/Anotacoes'
+import { AvisoDesfazer } from './components/AvisoDesfazer'
 import { Cronometro } from './components/Cronometro'
 import { InstalarApp } from './components/InstalarApp'
 import { CronometroMini } from './components/CronometroMini'
@@ -7,7 +8,8 @@ import { Placar } from './components/Placar'
 import { Punicoes } from './components/Punicoes'
 import { ResetarTudo } from './components/ResetarTudo'
 import { BotaoSumula } from './components/Sumula'
-import { useEstado } from './estado'
+import { useEstado, type Acao, type Estado } from './estado'
+import { descreverAcao, voltar, type Desfazivel } from './lib/desfazer'
 import { cn } from './lib/utils'
 import { abrirFlutuante, suportaFlutuante } from './lib/flutuante'
 import { apitar, manterTelaAcesa } from './lib/recursos'
@@ -36,6 +38,24 @@ export function App() {
   useEffect(() => {
     estadoAtual.current = estado
   }, [estado])
+
+  // Desfazer: guarda o jogo de antes das ações que mudam placar, registros ou tempo, e mostra o aviso.
+  const [aviso, setAviso] = useState<(Desfazivel & { id: number; antes: Estado }) | null>(null)
+  const contadorAvisos = useRef(0)
+  const fazer = useCallback(
+    (acao: Acao) => {
+      const antes = estadoAtual.current
+      const desfazivel = descreverAcao(acao, antes)
+      if (desfazivel) setAviso({ ...desfazivel, id: ++contadorAvisos.current, antes })
+      despachar(acao)
+    },
+    [despachar],
+  )
+  function desfazer() {
+    if (!aviso) return
+    despachar({ tipo: 'restaurar', estado: voltar(aviso.antes, estadoAtual.current, aviso.completo) })
+    setAviso(null)
+  }
   const [flutuanteAberta, setFlutuanteAberta] = useState(false)
   const [erroFlutuante, setErroFlutuante] = useState<string | null>(null)
   const fecharFlutuante = useRef<(() => void) | null>(null)
@@ -82,6 +102,14 @@ export function App() {
     return () => observador.disconnect()
   }, [])
   const mostrarMini = !cronometroNaTela
+  // Ao encerrar o 1º tempo o cronômetro fecha e a página encolhe: volta até ele para mostrar o intervalo.
+  const periodoAntes = useRef(estado.periodo)
+  useEffect(() => {
+    if (estado.periodo === 2 && periodoAntes.current === 1) areaCronometro.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    periodoAntes.current = estado.periodo
+  }, [estado.periodo])
+  // Em jogo de 2 tempos, registros e pop-ups dizem de qual tempo é o minuto.
+  const periodoEmJogo = estado.tempos === 2 ? estado.periodo : null
 
   // Regressivo chegou a zero: para o tempo e apita.
   useEffect(() => {
@@ -139,7 +167,7 @@ export function App() {
             <CronometroMini
               timer={timer}
               agora={agora}
-              despachar={despachar}
+              despachar={fazer}
               onAbrir={() => areaCronometro.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             />
           ) : null}
@@ -152,22 +180,24 @@ export function App() {
             <Cronometro
               timer={timer}
               agora={agora}
-              despachar={despachar}
+              despachar={fazer}
               aberto={ajustesAbertos}
+              jogo={{ tempos: estado.tempos, periodo: estado.periodo }}
               onAlternar={setCronometroAberto}
               flutuante={flutuante}
             />
           </div>
-          <Placar placar={estado.placar} minuto={minutoDeJogo(timer, agora)} despachar={despachar} />
-          <Punicoes punicoes={estado.punicoes} placar={estado.placar} timer={timer} agora={agora} despachar={despachar} />
+          <Placar placar={estado.placar} minuto={minutoDeJogo(timer, agora)} despachar={fazer} periodo={periodoEmJogo} />
+          <Punicoes punicoes={estado.punicoes} placar={estado.placar} timer={timer} agora={agora} despachar={fazer} />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
           <Anotacoes
+            periodo={periodoEmJogo}
             notas={estado.notas}
             placar={estado.placar}
             minuto={minutoDeJogo(timer, agora)}
             decorridoMs={decorridoMs(timer, agora)}
-            despachar={despachar}
+            despachar={fazer}
           />
         </div>
       </main>
@@ -180,7 +210,7 @@ export function App() {
             <InstalarApp />
             <ResetarTudo
               onResetar={() => {
-                despachar({ tipo: 'resetarTudo' })
+                fazer({ tipo: 'resetarTudo' })
                 setCronometroAberto(false)
               }}
             />
@@ -190,6 +220,7 @@ export function App() {
           </p>
         </div>
       </footer>
+      {aviso ? <AvisoDesfazer id={aviso.id} texto={aviso.texto} onDesfazer={desfazer} onFechar={() => setAviso(null)} /> : null}
     </div>
   )
 }

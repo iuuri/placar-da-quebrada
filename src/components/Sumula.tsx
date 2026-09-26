@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import type { Estado } from '@/estado'
-import { compartilharOuBaixar, contarPorTime, gerarSumulaPdf, nomeDoArquivo } from '@/lib/sumula'
+import { compartilharOuBaixar, gerarSumulaPdf, nomeDoArquivo } from '@/lib/sumula'
 import { decorridoMs, formatar } from '@/tempo'
-import { ORDEM_TIPOS, TIPOS } from '@/tipos'
+import { TIPOS } from '@/tipos'
 import { cn } from '@/lib/utils'
 import { Botao } from './Botao'
 import { Dialogo } from './Dialogo'
+import { Comparativo, Destaques, GolsPorFaixa, Jogadores, LegendaTimes, LinhaDoTempo } from './Estatisticas'
 import { Icone, IconeTipo } from './Icone'
 
 type Status = { tipo: 'ok' | 'erro'; texto: string } | null
@@ -35,7 +36,7 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
   const { casa, visitante } = estado.placar
   const nomeA = casa.nome || 'Time A'
   const nomeB = visitante.nome || 'Time B'
-  const c = contarPorTime(estado.notas)
+  const nomes = { casa: nomeA, visitante: nomeB }
   const registros = [...estado.notas].reverse()
   const compartilhar = podeCompartilhar()
 
@@ -58,53 +59,28 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
 
   return (
     <Dialogo titulo="Súmula do jogo" onFechar={onFechar} largo>
-      <p className="rounded-2xl bg-muro px-3 py-4 text-center font-display text-3xl font-black leading-tight">
-        {nomeA} {casa.gols} × {visitante.gols} {nomeB}
-      </p>
-      <p className="-mt-2 text-center text-sm text-tinta-suave">
-        Tempo jogado: {formatar(decorridoMs(estado.timer, abertaEm))}
-      </p>
+      <div className="flex flex-col gap-2 rounded-2xl bg-muro px-3 py-4">
+        <p className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 text-center">
+          <span className="truncate font-bold">{nomeA}</span>
+          <span className="font-display text-5xl font-black leading-none tabular-nums">
+            {casa.gols}
+            <span className="px-2 text-muro-escuro">×</span>
+            {visitante.gols}
+          </span>
+          <span className="truncate font-bold">{nomeB}</span>
+        </p>
+        <p className="text-center text-sm text-tinta-suave">Tempo jogado: {formatar(decorridoMs(estado.timer, abertaEm))}</p>
+      </div>
 
-      <table className="w-full table-fixed text-sm">
-        <caption className="sr-only">Resumo por time</caption>
-        <thead>
-          <tr className="border-b border-muro-escuro">
-            <th scope="col" className="w-[46%] pb-1 text-left font-normal text-tinta-suave">
-              Resumo
-            </th>
-            <th scope="col" className="truncate pb-1 text-center font-bold">
-              {nomeA}
-            </th>
-            <th scope="col" className="truncate pb-1 text-center font-bold">
-              {nomeB}
-            </th>
-          </tr>
-        </thead>
-        <tbody className="tabular-nums">
-          <tr>
-            <th scope="row" className="py-0.5 text-left font-normal">
-              Faltas
-            </th>
-            <td className="text-center font-bold">{casa.faltas}</td>
-            <td className="text-center font-bold">{visitante.faltas}</td>
-          </tr>
-          {ORDEM_TIPOS.filter((t) => t !== 'nota').map((tipo) => (
-            <tr key={tipo}>
-              <th scope="row" className="truncate py-0.5 text-left font-normal">
-                <span className="inline-flex items-center gap-2">
-                  <IconeTipo tipo={tipo} className={cn('size-4', TIPOS[tipo].tom)} />
-                  {TIPOS[tipo].plural}
-                </span>
-              </th>
-              <td className="text-center font-bold">{c.casa[tipo]}</td>
-              <td className="text-center font-bold">{c.visitante[tipo]}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <LegendaTimes nomes={nomes} />
+      <Destaques estado={estado} agora={abertaEm} />
+      <Comparativo estado={estado} nomes={nomes} />
+      <LinhaDoTempo estado={estado} agora={abertaEm} nomes={nomes} />
+      <GolsPorFaixa estado={estado} agora={abertaEm} nomes={nomes} />
+      <Jogadores estado={estado} nomes={nomes} />
 
       <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-bold">Registros ({registros.length})</h3>
+        <h3 className="text-sm font-bold text-tinta-suave">Registros ({registros.length})</h3>
         {registros.length === 0 ? (
           <p className="text-sm text-tinta-suave">Nenhum registro ainda.</p>
         ) : (
@@ -124,19 +100,25 @@ function TelaSumula({ estado, onFechar }: { estado: Estado; onFechar: () => void
         )}
       </div>
 
-      <Botao className="min-h-14 text-lg" disabled={gerando} onClick={gerar} data-autofocus>
-        <Icone nome={compartilhar ? 'compartilhar' : 'instalar'} />
-        {gerando ? 'Gerando PDF…' : compartilhar ? 'Compartilhar PDF' : 'Baixar PDF'}
-      </Botao>
-      <p className="-mt-2 text-center text-xs text-tinta-suave">PDF protegido contra edição, pronto para o WhatsApp.</p>
-      {status ? (
-        <p role="status" className={status.tipo === 'erro' ? 'font-bold text-cartao' : 'font-bold text-placa'}>
-          {status.texto}
-        </p>
-      ) : null}
-      <Botao variante="texto" onClick={onFechar}>
-        Fechar
-      </Botao>
+      <p className="text-center text-xs text-tinta-suave">O PDF sai protegido contra edição, pronto para o WhatsApp.</p>
+
+      {/* Ações ficam presas no fim da folha: a súmula pode ficar longa com os gráficos. */}
+      <div className="sticky -bottom-5 -mx-5 flex flex-col gap-2 border-t border-muro-escuro bg-painel px-5 py-3">
+        {status ? (
+          <p role="status" className={status.tipo === 'erro' ? 'text-sm font-bold text-cartao' : 'text-sm font-bold text-gramado'}>
+            {status.texto}
+          </p>
+        ) : null}
+        <div className="flex gap-2">
+          <Botao variante="contorno" className="min-h-14 px-5" onClick={onFechar}>
+            Fechar
+          </Botao>
+          <Botao className="min-h-14 flex-1 text-lg" disabled={gerando} onClick={gerar} data-autofocus>
+            <Icone nome={compartilhar ? 'compartilhar' : 'instalar'} />
+            {gerando ? 'Gerando PDF…' : compartilhar ? 'Compartilhar PDF' : 'Baixar PDF'}
+          </Botao>
+        </div>
+      </div>
     </Dialogo>
   )
 }

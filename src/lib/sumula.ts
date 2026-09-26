@@ -1,6 +1,18 @@
 import type { Estado, Lado, Nota, TipoNota } from '@/estado'
-import { ORDEM_TIPOS, TIPOS } from '@/tipos'
+import { TIPOS } from '@/tipos'
 import { decorridoMs, formatar } from '@/tempo'
+import {
+  COR_TIME,
+  comparativo,
+  destaques,
+  duracaoEixo,
+  eventosLinhaDoTempo,
+  golsPorFaixa,
+  porJogador,
+  proporcao,
+} from './estatisticas'
+
+type RGB = [number, number, number]
 
 // Súmula do jogo em PDF, gerada no próprio aparelho (sem servidor).
 // O jsPDF é carregado só quando alguém pede a súmula, para não pesar na abertura do app.
@@ -130,33 +142,245 @@ export async function gerarSumulaPdf(estado: Estado, agora: number, data = new D
   linha('Acréscimo', t.acrescimoSeg > 0 ? formatar(t.acrescimoSeg * 1000) : 'Nenhum')
   linha('Tempo jogado', formatar(decorridoMs(t, agora)))
 
-  // Resumo por time
-  const porTime = contarPorTime(estado.notas)
-  y += 3
-  doc.line(L, y - 5, L + largura, y - 5)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(13)
-  doc.text('Resumo', L, y + 1)
-  const colA = L + 95
-  const colB = L + 140
-  doc.setFontSize(10)
-  doc.text(nomeCasa, colA, y + 1, { align: 'center', maxWidth: 42 })
-  doc.text(nomeVisitante, colB, y + 1, { align: 'center', maxWidth: 42 })
-  y += 8
-  doc.setFontSize(11)
-  for (const tipo of ORDEM_TIPOS) {
-    doc.setFillColor(...TIPOS[tipo].rgb)
-    doc.rect(L, y - 3.5, 4, 4, 'F')
-    doc.setFont('helvetica', 'normal')
-    const geral = porTime.geral[tipo]
-    doc.text(TIPOS[tipo].plural + (tipo === 'nota' && geral > 0 ? ` (+${geral} gerais)` : ''), L + 6, y)
-    doc.setFont('helvetica', 'bold')
-    doc.text(String(porTime.casa[tipo]), colA, y, { align: 'center' })
-    doc.text(String(porTime.visitante[tipo]), colB, y, { align: 'center' })
-    y += 6.5
+  // Estatísticas: mesmas da tela (destaques, comparativo, linha do tempo, gols por faixa, jogadores)
+  const nomes = { casa: nomeCasa, visitante: nomeVisitante }
+  const COR = COR_TIME.pdf
+  const TINTA: RGB = [20, 33, 61]
+  const SUAVE: RGB = [110, 120, 140]
+  const LINHA: RGB = [215, 220, 228]
+  const espaco = (altura: number) => {
+    if (y + altura > 280) {
+      doc.addPage()
+      y = 20
+    }
   }
-  y += 6
+  const titulo = (texto: string) => {
+    espaco(16)
+    doc.setDrawColor(...LINHA)
+    doc.line(L, y - 5, L + largura, y - 5)
+    doc.setTextColor(...TINTA)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(13)
+    doc.text(texto, L, y + 1)
+    y += 9
+  }
 
+  // Legenda dos times (vale para todos os gráficos)
+  y += 2
+  doc.setFontSize(10)
+  let lx = L
+  for (const lado of ['casa', 'visitante'] as const) {
+    doc.setFillColor(...COR[lado])
+    doc.circle(lx + 1.6, y - 1.2, 1.6, 'F')
+    doc.setTextColor(...TINTA)
+    doc.setFont('helvetica', 'bold')
+    doc.text(nomes[lado], lx + 5, y)
+    lx += doc.getTextWidth(nomes[lado]) + 14
+  }
+  y += 10
+
+  // Destaques: até 4 quadros lado a lado
+  const lista = destaques(estado, agora)
+  if (lista.length > 0) {
+    titulo('Destaques')
+    const w = (largura - 3 * 4) / 4
+    lista.forEach((d, i) => {
+      const x = L + i * (w + 4)
+      doc.setFillColor(243, 245, 248)
+      doc.roundedRect(x, y - 4, w, 20, 2, 2, 'F')
+      doc.setTextColor(...SUAVE)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.text(textoSeguro(d.titulo), x + 3, y)
+      doc.setTextColor(...TINTA)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(13)
+      doc.text(textoSeguro(d.valor), x + 3, y + 7, { maxWidth: w - 6 })
+      if (d.detalhe) {
+        doc.setTextColor(...SUAVE)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(7.5)
+        doc.text(doc.splitTextToSize(textoSeguro(d.detalhe), w - 6)[0] as string, x + 3, y + 12.5)
+      }
+    })
+    y += 26
+  }
+
+  // Estatísticas da partida: número nas pontas e barra dividida na proporção
+  titulo('Estatísticas da partida')
+  for (const l of comparativo(estado)) {
+    espaco(12)
+    doc.setTextColor(...TINTA)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(13)
+    doc.text(String(l.casa), L, y)
+    doc.text(String(l.visitante), L + largura, y, { align: 'right' })
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(...SUAVE)
+    doc.text(l.rotulo, 105, y - 1, { align: 'center' })
+    const bx = L + 14
+    const bw = largura - 28
+    const p = proporcao(l)
+    if (!p) {
+      doc.setFillColor(...LINHA)
+      doc.roundedRect(bx, y + 1, bw, 1.8, 0.9, 0.9, 'F')
+    } else {
+      const gap = p.casa > 0 && p.visitante > 0 ? 0.8 : 0
+      const wc = (bw - gap) * p.casa
+      if (p.casa > 0) {
+        doc.setFillColor(...COR.casa)
+        doc.roundedRect(bx, y + 1, wc, 1.8, 0.9, 0.9, 'F')
+      }
+      if (p.visitante > 0) {
+        doc.setFillColor(...COR.visitante)
+        doc.roundedRect(bx + wc + gap, y + 1, bw - wc - gap, 1.8, 0.9, 0.9, 'F')
+      }
+    }
+    y += 10
+  }
+  y += 2
+
+  // Linha do tempo: um time em cima, o outro embaixo
+  const eventos = eventosLinhaDoTempo(estado.notas)
+  if (eventos.length > 0) {
+    titulo('Linha do tempo')
+    espaco(44)
+    const eixo = duracaoEixo(estado, agora)
+    const passo = eixo <= 30 ? 5 : 10
+    const x0 = L + 4
+    const x1 = L + largura - 4
+    const px = (min: number) => x0 + (Math.min(min, eixo) / eixo) * (x1 - x0)
+    const ey = y + 16
+    doc.setDrawColor(...LINHA)
+    doc.setLineWidth(0.2)
+    doc.setFontSize(8)
+    doc.setTextColor(...SUAVE)
+    for (let m = 0; m <= eixo; m += passo) {
+      doc.line(px(m), y, px(m), y + 32)
+      doc.text(`${m}'`, px(m), y + 36, { align: 'center' })
+    }
+    doc.setDrawColor(...SUAVE)
+    doc.setLineWidth(0.6)
+    doc.line(x0, ey, x1, ey)
+    const colocados: Record<Lado, number[]> = { casa: [], visitante: [] }
+    for (const n of eventos) {
+      const cx = px(n.minuto)
+      const nivel = Math.min(2, colocados[n.lado].filter((o) => Math.abs(o - cx) < 4).length)
+      colocados[n.lado].push(cx)
+      const d = 6 + nivel * 4.5
+      const cy = n.lado === 'casa' ? ey - d : ey + d
+      doc.setDrawColor(...COR[n.lado])
+      doc.setLineWidth(0.6)
+      doc.line(cx, ey, cx, cy)
+      doc.setFillColor(...TIPOS[n.tipo].rgb)
+      doc.setDrawColor(255, 255, 255)
+      if (n.tipo === 'amarelo' || n.tipo === 'vermelho') doc.roundedRect(cx - 1.4, cy - 2, 2.8, 4, 0.5, 0.5, 'FD')
+      else doc.circle(cx, cy, 1.9, 'FD')
+    }
+    doc.setLineWidth(0.2)
+    y += 42
+    // legenda dos tipos
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    let tx = L
+    for (const lado of ['casa', 'visitante'] as const) {
+      const rotulo = `${nomes[lado]} ${lado === 'casa' ? 'em cima' : 'embaixo'}`
+      doc.setFillColor(...COR[lado])
+      doc.rect(tx, y - 1.8, 3, 0.9, 'F')
+      doc.setTextColor(...TINTA)
+      doc.text(rotulo, tx + 4.5, y)
+      tx += doc.getTextWidth(rotulo) + 9
+    }
+    // tipos numa segunda linha, quebrando se não couber na largura
+    tx = L
+    y += 5.5
+    for (const t of [...new Set(eventos.map((e) => e.tipo))]) {
+      if (tx + doc.getTextWidth(ROTULO_TIPO[t]) + 4 > L + largura) {
+        tx = L
+        y += 5.5
+      }
+      doc.setFillColor(...TIPOS[t].rgb)
+      if (t === 'amarelo' || t === 'vermelho') doc.rect(tx, y - 3, 2.2, 3.2, 'F')
+      else doc.circle(tx + 1.1, y - 1.3, 1.3, 'F')
+      doc.setTextColor(...TINTA)
+      doc.text(ROTULO_TIPO[t], tx + 4, y)
+      tx += doc.getTextWidth(ROTULO_TIPO[t]) + 10
+    }
+    y += 10
+  }
+
+  // Gols por faixa de tempo
+  const faixas = golsPorFaixa(estado.notas, duracaoEixo(estado, agora))
+  const maior = Math.max(0, ...faixas.flatMap((f) => [f.casa, f.visitante]))
+  if (maior > 0) {
+    titulo('Gols por tempo de jogo')
+    espaco(34)
+    const alturaMax = 20
+    const base = y + alturaMax + 4
+    const slot = largura / faixas.length
+    const bw = Math.min(5, slot / 3)
+    doc.setDrawColor(...LINHA)
+    doc.line(L, base, L + largura, base)
+    faixas.forEach((f, i) => {
+      const cx = L + slot * i + slot / 2
+      ;(['casa', 'visitante'] as const).forEach((lado, j) => {
+        const v = f[lado]
+        const bx = j === 0 ? cx - bw - 0.4 : cx + 0.4
+        if (v > 0) {
+          const h = (v / maior) * alturaMax
+          doc.setFillColor(...COR[lado])
+          doc.rect(bx, base - h, bw, h, 'F')
+          doc.setTextColor(...TINTA)
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(8)
+          doc.text(String(v), bx + bw / 2, base - h - 1.2, { align: 'center' })
+        }
+      })
+      doc.setTextColor(...SUAVE)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.text(`${f.inicio}-${f.fim}'`, cx, base + 4.5, { align: 'center' })
+    })
+    y = base + 14
+  }
+
+  // Jogadores (gols, cartões e punições por nome)
+  const jogadores = porJogador(estado.notas)
+  if (jogadores.length > 0) {
+    titulo('Jogadores')
+    doc.setFontSize(9)
+    doc.setTextColor(...SUAVE)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Jogador', L, y)
+    doc.text('Time', L + 56, y)
+    doc.text('Gols', L + 104, y, { align: 'center' })
+    doc.text('Amarelos', L + 124, y, { align: 'center' })
+    doc.text('Vermelhos', L + 146, y, { align: 'center' })
+    doc.text('Punições', L + 166, y, { align: 'center' })
+    y += 6
+    doc.setFontSize(10)
+    for (const j of jogadores) {
+      espaco(7)
+      doc.setFillColor(...COR[j.lado])
+      doc.circle(L + 1.2, y - 1.2, 1.2, 'F')
+      doc.setTextColor(...TINTA)
+      doc.setFont('helvetica', 'bold')
+      doc.text(doc.splitTextToSize(textoSeguro(j.nome), 48)[0] as string, L + 4, y)
+      doc.setFont('helvetica', 'normal')
+      doc.text(doc.splitTextToSize(nomes[j.lado], 40)[0] as string, L + 56, y)
+      const num = (v: number, x: number) => doc.text(v ? String(v) : '-', x, y, { align: 'center' })
+      num(j.gols, L + 104)
+      num(j.amarelos, L + 124)
+      num(j.vermelhos, L + 146)
+      num(j.punicoes, L + 166)
+      y += 6.5
+    }
+    y += 6
+  }
+
+  doc.setTextColor(...TINTA)
+  espaco(20)
   // Lista de anotações, em ordem cronológica
   doc.line(L, y - 5, L + largura, y - 5)
   doc.setFont('helvetica', 'bold')
